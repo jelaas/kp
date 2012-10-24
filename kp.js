@@ -99,17 +99,19 @@ function log_new(name) {
     log.framework_create = function () {
 	if ($('#log_'+this.id).length == 0) {
 	    $('#logs').prepend('<table border=0 class="logtable" id="log_' + this.id +
-			      '"><tr><td COLSPAN=2 >' +
+			       '"><tr><td COLSPAN=3 >' +
 			       '<img WIDTH=18 HEIGHT=18 id="logdel_'+ this.id +'" src="'+baseurl+'close.png">' +
 			       '<img WIDTH=18 HEIGHT=18 id="logtoggle_'+ this.id +'" src="'+baseurl+'plus.png">&nbsp;' +
 			       this.name +
-			      '</td></tr><tr><td id="logtime_' + this.id +
-			      '"></td><td id="logstatus_' + this.id +
-			      '"></td></tr><tr><td COLSPAN=2 >' +
-			      '<textarea readonly class="log" wrap=off cols=40 rows=35 id="logdata_' +
-			      this.id +
-			      '"></textarea></td></tr></table>'
-			     );
+			       '</td></tr><tr><td id="logtime_' + this.id +
+			       '"></td><td id="logstatus_' + this.id +
+			       '"></td><td><a href="' + baseurl+ '_log/' +this.name +
+			       '"><img WIDTH=18 HEIGHT=18 src="'+baseurl+'download.png"></a>' +
+			       '</td></tr><tr><td COLSPAN=3 >' +
+			       '<textarea readonly class="log" wrap=off cols=40 rows=35 id="logdata_' +
+			       this.id +
+			       '"></textarea></td></tr></table>'
+			      );
 	    $('#logdel_'+this.id).click(this, function(event) {
 		event.data.remove();
 	    });
