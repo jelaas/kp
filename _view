@@ -1,0 +1,88 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+# Local Variables:
+# mode: php
+# End:
+header('Content-type: text/plain');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: illegal session cookie: ".$sesid);
+  exit(0);
+}
+if(!file_exists($root."/tmp/KP-".$sesid)) {
+  header("HTTP/1.1 403 Forbidden: no session file");
+  exit(0);
+}
+$name = file_get_contents($root."/tmp/KP-".$sesid);
+if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: username syntax");
+  exit(0);
+}
+
+$tags=array_values(array_filter(explode("/", $_SERVER["PATH_INFO"])));
+
+$roles = array();
+
+$dir = $root."/auth";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file;
+    $users=file_get_contents($fn);
+    $u = explode("\n", $users);
+    foreach ($u as $key => $user) {
+      if($user == $name) {
+	array_push($roles, $file);
+	break;
+      }
+    }
+  }
+  closedir($dh);
+}
+
+$dir = $root."/exe";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file."/roles";
+    if(!file_exists($fn)) continue;
+    $permitted=0;
+    $jobroles=file_get_contents($fn);
+    $u = explode("\n", $jobroles);
+    foreach ($u as $key => $role) {
+      if(in_array($role,$roles)) {
+	$permitted=1;
+	break;
+      }
+    }
+    if(!$permitted) continue;
+    $fn = $dir."/".$file."/tags";
+    if(!file_exists($fn)) {
+      print "$file\n";
+      continue;
+    }
+    if(count($tags) == 0) {
+      print "$file\n";
+      continue;
+    }
+    $jobtags=file_get_contents($fn);
+    $u = array_filter(explode("\n", $jobtags));
+    $match=1;
+    foreach ($tags as $key => $tag) {
+      if(!in_array($tag,$u)) {
+	$match=0;
+	break;
+      }
+    }
+    if($match) print "$file\n";
+
+  }
+  closedir($dh);
+}
+?>

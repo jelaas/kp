@@ -1,0 +1,53 @@
+body {
+  font-family: sans-serif;
+  font-size: 18px;
+}
+
+.name {
+    font-weight:bold;
+    color: green;
+}
+.desc {
+    font-style:italic;
+    font-size: 16px;
+}
+.param {
+    font-size: 14px;
+    color: #222;
+}
+.message {
+    font-size: 12px;
+    color: #e00;
+    white-space:nowrap;
+}
+.history {
+    font-size: 14px;
+    white-space:nowrap;
+}
+
+.log {
+    font-size: 12px;
+    color: black;
+}
+
+.logtable {
+        display: inline;
+}
+
+.run {
+    font-weight:bold;
+    color: darkred;
+}
+
+.logout {
+    font-weight:bold;
+    color: darkred;
+}
+
+tr.jobrow:nth-of-type(even) {
+  background-color:#eee;
+}
+tr.logrow:nth-of-type(even) {
+  background-color:#5ee;
+}
+

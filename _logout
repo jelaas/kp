@@ -1,0 +1,77 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+# php.ini
+# short_open_tag = On 
+# date.timezone = "Europe/Stockholm";
+
+header('Content-type: text/html');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+# Clear out old sessions
+$dir = $root."/tmp";
+$old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $pfx = substr($file, 0, 3);
+    if($pfx != "KP-") continue;
+    
+    $fn = $dir."/".$file;
+    $mtime = filemtime($fn);
+    if($mtime < $old) {
+      unlink($fn);
+    }
+  }
+  closedir($dh);
+}
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  $sesid="invalid";
+} else {
+  if(!file_exists($root."/tmp/KP-".$sesid)) {
+    $sesid="invalid";
+    $name="";
+  } else {
+    $name = file_get_contents($root."/tmp/KP-".$sesid);
+    if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+      $sesid="invalid";
+      $name="";
+    } else {
+      unlink($root."/tmp/KP-".$sesid);
+      file_put_contents( $root."/log/kp.log", "User $name logged out from session $sesid\n", FILE_APPEND);
+    }
+  }
+}
+
+$a = explode("?", $_SERVER['REQUEST_URI']);
+$baseurl = substr($a[0], 0, strlen($a[0])-strlen($_SERVER["PATH_INFO"]));
+$b = explode("/", $baseurl);
+array_pop($b);
+$baseurl = implode("/", $b);
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>kp</title>
+    <link href="<?=$baseurl?>/layout.css" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="<?=$baseurl?>/favicon.ico" type="image/x-icon">
+    <style type="text/css">
+    body
+    {
+    background-image:url("<?=$baseurl?>/favicon.ico");
+    background-repeat:no-repeat;
+    background-size:32px 25px;
+    }
+    </style>
+ </head>
+ <body>
+<hr>
+<p class="logout"> You are no longer logged in.</p>
+<p> Klick <a href="<?=$baseurl?>/kp">here</a> to relogin. </p>
+</body>
+</html>

@@ -1,0 +1,36 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+# Local Variables:
+# mode: php
+# End:
+header('Content-type: text/plain');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+$tags = array();
+
+$dir = $root."/exe";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file."/tags";
+    if(!file_exists($fn)) {
+      continue;
+    }
+    $jobtags=file_get_contents($fn);
+    $u = explode("\n", $jobtags);
+    foreach ($u as $key => $tag) {
+      if(strlen($tag) > 0) {
+	$tags[$tag] = 1;
+      }
+    }
+  }
+  closedir($dh);
+}
+
+foreach ($tags as $key => $tag) {
+  print "$key\n";
+}
+?>

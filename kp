@@ -1,0 +1,159 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+# php.ini
+# short_open_tag = On 
+# date.timezone = "Europe/Stockholm";
+
+header('Content-type: text/html');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+$PI=$_SERVER["PATH_INFO"];
+$CASURL=$_SERVER["KPCASURL"];
+$SERVICE=$_SERVER["KPCASSERVICE"].$PI;
+
+if(!$root) {
+  header("HTTP/1.1 500 Configuration error. KPHOME undefined.");
+  exit(0);
+}
+if(!$CASURL) {
+  header("HTTP/1.1 500 Configuration error. KPCASURL undefined.");
+  exit(0);
+}
+if(!$SERVICE) {
+  header("HTTP/1.1 500 Configuration error. KPCASSERVICE undefined.");
+  exit(0);
+}
+if(!$_SERVER["KPSESSIONTIMEOUT"]) {
+  header("HTTP/1.1 500 Configuration error. KPSESSIONTIMEOUT undefined.");
+  exit(0);  
+}
+if(!$_SERVER["KPCOOKIETIMEOUT"]) {
+  header("HTTP/1.1 500 Configuration error. KPCOOKIETIMEOUT undefined.");
+  exit(0);  
+}
+
+if(!file_exists($root."/tmp")) {
+  header("HTTP/1.1 500 Configuration error. $root/tmp");
+  exit(0);
+}
+if(!file_exists($root."/exe")) {
+  header("HTTP/1.1 500 Configuration error. $root/exe");
+  exit(0);
+}
+if(!file_exists($root."/log")) {
+  header("HTTP/1.1 500 Configuration error. $root/log");
+  exit(0);
+}
+if(!file_exists($root."/auth")) {
+  header("HTTP/1.1 500 Configuration error. $root/auth");
+  exit(0);
+}
+
+# Clear out old sessions
+$dir = $root."/tmp";
+$old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $pfx = substr($file, 0, 3);
+    if($pfx != "KP-") continue;
+    
+    $fn = $dir."/".$file;
+    $mtime = filemtime($fn);
+    if($mtime < $old) {
+      unlink($fn);
+    }
+  }
+  closedir($dh);
+}
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  $sesid="invalid";
+} else {
+  if(!file_exists($root."/tmp/KP-".$sesid)) {
+    $sesid="invalid";
+    $name="";
+  } else {
+    $name = file_get_contents($root."/tmp/KP-".$sesid);
+    if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+      $sesid="invalid";
+      $name="";
+    } else {
+      # keep session alive
+      touch($root."/tmp/KP-".$sesid);
+    }
+  }
+}
+
+if($sesid == "invalid") {
+  $ticket = $_REQUEST['ticket'];
+  if (!isset($ticket)) {
+    header("Location: $CASURL/login?service=".$SERVICE);
+  } else {
+    $ch = curl_init ("$CASURL/validate?service=".$SERVICE."&ticket=$ticket");
+    curl_setopt ($ch, CURLOPT_HEADER, 0);
+    curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
+    
+    $result=curl_exec ($ch);
+    $arr = explode( "\n", $result );
+    $code = $arr[0];
+    $name = $arr[1];
+    $pgt = $arr[2];
+    curl_close ($ch);
+    
+    if ($code != "yes" ) {
+      header("Location: $CASURL/login?service=".$SERVICE);
+      exit(0);
+    }
+    $sesid = time() . mt_rand();
+    setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/");
+    file_put_contents( $root."/tmp/KP-".$sesid, $name);
+    file_put_contents( $root."/log/kp.log", "User $name logged in using sesid: $sesid\n", FILE_APPEND);
+  }
+}
+
+$ticket = $_REQUEST['ticket'];
+if (isset($ticket)) {
+  header("Location: $SERVICE");
+  exit(0);
+}
+
+$RURI=$_SERVER['REQUEST_URI'];
+$a = explode("?", $_SERVER['REQUEST_URI']);
+$baseurl = substr($a[0], 0, strlen($a[0])-strlen($_SERVER["PATH_INFO"]));
+$b = explode("/", $baseurl);
+array_pop($b);
+$baseurl = implode("/", $b);
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>kp</title>
+    <link href="<?=$baseurl?>/layout.css" rel="stylesheet" type="text/css">
+    <link rel="shortcut icon" href="<?=$baseurl?>/favicon.ico" type="image/x-icon">
+    <script language="javascript" type="text/javascript" src="<?=$baseurl?>/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="<?=$baseurl?>/kp.js"></script>
+    <style type="text/css">
+    body
+    {
+    background-image:url("<?=$baseurl?>/favicon.ico");
+    background-repeat:no-repeat;
+    background-size:32px 25px;
+    }
+    </style>
+ </head>
+ <body>
+<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
+<hr/>
+<tt id="tags"></tt>
+<hr/>
+<table border="0" id="items"></table>
+<hr/>
+<div id="logs">
+</div>
+</body>
+</html>

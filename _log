@@ -1,0 +1,138 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+# Local Variables:
+# mode: php
+# End:
+header('Content-type: text/plain');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: illegal session cookie: ".$sesid);
+  exit(0);
+}
+if(!file_exists($root."/tmp/KP-".$sesid)) {
+  header("HTTP/1.1 403 Forbidden: no session file");
+  exit(0);
+}
+$name = file_get_contents($root."/tmp/KP-".$sesid);
+if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: username syntax");
+  exit(0);
+}
+
+$roles = array();
+
+$dir = $root."/auth";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file;
+    $users=file_get_contents($fn);
+    $u = explode("\n", $users);
+    foreach ($u as $key => $user) {
+      if($user == $name) {
+	array_push($roles, $file);
+	break;
+      }
+    }
+  }
+  closedir($dh);
+}
+
+$a=explode("/", $_SERVER["PATH_INFO"]);
+$log=$a[1];
+$attr=$a[2];
+if (!filter_var($log, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z0-9:-]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: logname syntax");
+  exit(0);
+}
+if($attr)
+  if (!filter_var($attr, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z]+$/")))) {
+    header("HTTP/1.1 403 Forbidden: attribute syntax");
+    exit(0);
+  }
+
+$logroles = file_get_contents($root."/log/".$log.".roles");
+$permitted=0;
+$u = explode("\n", $logroles);
+foreach ($u as $key => $role) {
+  if(in_array($role,$roles)) {
+    $permitted=1;
+    break;
+  }
+}
+
+if($permitted == 0) {
+    header("HTTP/1.1 403 Forbidden: log");
+    exit(0);
+}
+
+#
+# _log/<logname>/(start|end|status)
+# log file attribute
+#
+
+if($attr == "start") {
+  $fn = $root."/log/".$log.".start";
+  if(!file_exists($fn)) {
+    header("HTTP/1.1 404 No such log");
+    exit(0);
+  }
+  $start = file_get_contents($fn);
+  print "$start";
+  exit(0);
+}
+
+if($attr == "end") {
+  $fn = $root."/log/".$log.".end";
+  if(!file_exists($fn)) {
+    header("HTTP/1.1 404 Job not done");
+    exit(0);
+  }
+  $end = file_get_contents($fn);
+  print "$end";
+  exit(0);
+}
+
+if($attr == "status") {
+  $fn = $root."/log/".$log.".status";
+  if(!file_exists($fn)) {
+    header("HTTP/1.1 404 No status yet");
+    exit(0);
+  }
+  $status = file_get_contents($fn);
+  print "$status";
+  exit(0);
+}
+
+if($attr) {
+  header("HTTP/1.1 404 No such log attribute");
+  exit(0);
+}
+
+#
+# _log/<logname>?start=bytepos
+# Output contents of log starting at <bytepos>
+#
+
+touch($root."/tmp/KP-".$sesid);
+
+$pos=$_REQUEST["start"];
+if (!filter_var($pos, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[0-9]+$/")))) {
+  $pos=0;
+}
+$f=fopen("$root/log/$log", "r");
+fseek($f, $pos);
+while(!feof($f)) {
+  $line = fgets($f);
+  $line = htmlspecialchars($line);
+  print "$line";
+}
+fclose($f);
+exit(0);
+
+?>

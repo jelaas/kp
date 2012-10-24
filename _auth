@@ -1,0 +1,44 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+header('Content-type: text/plain');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden");
+  exit(0);
+}
+if(!file_exists($root."/tmp/KP-".$sesid)) {
+  header("HTTP/1.1 403 Forbidden");
+  exit(0);
+}
+$name = file_get_contents($root."/tmp/KP-".$sesid);
+if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden");
+  exit(0);
+}
+
+$a=explode("/", $_SERVER["PATH_INFO"]);
+$lookup=$a[1];
+$dir = $root."/auth";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file;
+    $users=file_get_contents($fn);
+    $u = explode("\n", $users);
+    foreach ($u as $key => $user) {
+      if($user == $lookup) {
+	print "$file\n";
+	break;
+      }
+    }
+  }
+  closedir($dh);
+}
+
+
+?>

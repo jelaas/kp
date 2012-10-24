@@ -1,0 +1,255 @@
+#!/opt/php-5.3/bin/php-cgi -f
+<?php
+header('Content-type: text/plain');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+$root=$_SERVER["KPHOME"];
+
+$sesid = $_COOKIE['session'];
+if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: invalid session");
+  exit(0);
+}
+if(!file_exists($root."/tmp/KP-".$sesid)) {
+  header("HTTP/1.1 403 Forbidden: no session object");
+  exit(0);
+}
+$name = file_get_contents($root."/tmp/KP-".$sesid);
+if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: bad username");
+  exit(0);
+}
+
+$a=explode("/", $_SERVER["PATH_INFO"]);
+$lookup=$a[1];
+$attr=$a[2];
+if (!filter_var($lookup, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[-_a-zA-Z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: invalid job syntax");
+  exit(0);
+}
+if (!filter_var($attr, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+  header("HTTP/1.1 403 Forbidden: invalid attribute syntax");
+  exit(0);
+}
+
+if($attr == "logs") {
+  $history = array();
+  
+  $dir = $root."/log";
+  if($dh = opendir($dir)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      $ending = substr(strrchr($file,'.'),1);
+      if($ending != "job") continue;
+      $fn = $dir."/".$file;
+      $logjob=file_get_contents($fn);
+      if($logjob == $lookup) {
+	$f = strstr($file,'.', 1);
+	array_push($history, $f);
+      }
+    }
+    closedir($dh);
+  }
+  rsort($history);
+  array_splice($history, 10);
+  foreach ($history as $key => $hentry) {
+    print "$hentry\n";
+  }  
+  exit(0);
+}
+
+if(!file_exists($root."/exe/".$lookup)) {
+  header("HTTP/1.1 404 job does not exist");
+  exit(0);
+}
+if(!file_exists($root."/exe/".$lookup."/".$attr)) {
+  header("HTTP/1.1 404 attribute does not exist");
+  exit(0);
+}
+
+$fn = $root."/exe/".$lookup."/".$attr;
+
+function printattr($fn) {
+  $out = file_get_contents($fn);
+  $out = htmlspecialchars($out);
+  print $out;
+  exit(0);	 
+}
+
+function nonemptystr($var) {
+  return strlen($var) > 0;
+}
+
+function getvalidator($root, $job, $param) {
+  $fn = $root."/exe/".$job."/".$param;
+  if(!file_exists($fn)) {
+    return "";
+  }
+  $p = rtrim(file_get_contents($fn));
+  $a = explode(":", $p);
+  $a = explode(" ", $a[1]);
+  $a = array_values(array_filter($a, "nonemptystr"));
+  return $a[1];
+}
+
+function validate_param($param, $validator) {
+  if($validator == "alnum") {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z0-9]+$/")))) {
+      return 0;
+    }
+    return 1;
+  }
+  if($validator == "alpha") {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z]+$/"))))
+      return 0;
+    return 1;
+  }
+  if($validator == "num") {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[0-9]+$/"))))
+      return 0;
+    return 1;
+  }
+  return 1;
+}
+
+if($attr == description) printattr($fn);
+if($attr == name) printattr($fn);
+if($attr == param1) printattr($fn);
+if($attr == param2) printattr($fn);
+if($attr == param3) printattr($fn);
+if($attr == roles) printattr($fn);
+if($attr == tags) printattr($fn);
+if($attr == autodesc) { print "true"; exit(0); }
+if($_SERVER['REQUEST_METHOD'] == 'GET') {
+  if($attr == run) { print "true"; exit(0); }
+}
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
+  $roles = array();
+
+  # Fetch user roles
+  $dir = $root."/auth";
+  if($dh = opendir($dir)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      $fn = $dir."/".$file;
+      $users=file_get_contents($fn);
+      $u = explode("\n", $users);
+      foreach ($u as $key => $user) {
+	if($user == $name) {
+	  array_push($roles, $file);
+	  break;
+	}
+      }
+    }
+    closedir($dh);
+  } else {
+    header("HTTP/1.1 503 could not open $dir");
+    exit(0);
+  }
+
+  if(!count($roles)) {
+    header("HTTP/1.1 403 Forbidden: no roles for $name");
+    exit(0);
+  }
+  
+  # Check authorization
+  $fn = $root."/exe/".$lookup."/roles";
+  $permitted=0;
+  if(file_exists($fn)) {
+    $jobroles=file_get_contents($fn);
+    $u = explode("\n", $jobroles);
+    foreach ($u as $key => $role) {
+      if(in_array($role,$roles)) {
+	$permitted=1;
+	break;
+      }
+    }
+  }
+  
+  if(!$permitted) {
+    header("HTTP/1.1 403 Forbidden: roles");
+    print_r($roles);
+    exit(0);
+  }
+  
+  # Clear out old sessions
+  $dir = $root."/tmp";
+  $old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;
+  if($dh = opendir($dir)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      $pfx = substr($file, 0, 3);
+      if($pfx != "KP-") continue;
+      
+      $fn = $dir."/".$file;
+      $mtime = filemtime($fn);
+      if($mtime < $old) {
+	unlink($fn);
+      }
+    }
+    closedir($dh);
+  }
+
+  # keep session alive
+    if(file_exists($root."/tmp/KP-".$sesid))
+      touch($root."/tmp/KP-".$sesid);
+
+  if($attr == run) {
+    $validator = getvalidator($root, $lookup, 'param1');
+    if($validator) {
+      if(validate_param('param1', $validator)) {
+	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param1']."' validator: $validator");
+	exit(0);
+      }
+      putenv("PARAM1=".$_REQUEST['param1']);
+    }
+    $validator = getvalidator($root, $lookup, 'param2');
+    if($validator) {
+      if(validate_param('param2', $validator)) {
+	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param2']."' validator: $validator");
+	exit(0);
+      }
+      putenv("PARAM2=".$_REQUEST['param2']);
+    }
+    $validator = getvalidator($root, $lookup, 'param3');
+    if($validator) {
+      if(validate_param('param3', $validator)) {
+	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param3']."' validator: $validator");
+	exit(0);
+      }
+      putenv("PARAM3=".$_REQUEST['param3']);
+    }
+    
+    date_default_timezone_set(date.timezone);
+    $d = date("Ymd\-G\:i\:s\-").$name;
+    if (! function_exists('pcntl_fork')) {
+      header("HTTP/1.1 503 PCNTL functions not available on this PHP installation. KP wont work");
+      print('PCNTL functions not available on this PHP installation. KP wont work!');
+      exit(0);
+    }
+    file_put_contents( $root."/log/kp.log", "User $name executes: $lookup log: $d\n", FILE_APPEND);
+    $pid = pcntl_fork();
+    if($pid == 0) {
+      posix_setsid();
+      file_put_contents("$root/log/$d.job", $lookup);
+      file_put_contents("$root/log/$d.start", time());
+      file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$lookup."/roles"));
+      system("$root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+      file_put_contents("$root/log/$d.end", time());
+      file_put_contents("$root/log/$d.status", $status);
+      
+      # Since I never managed to close stdout and stderr within PHP, we kill our process instead.
+      # If dont do this PHP will output headers from the child also..
+      posix_kill(posix_getpid(), SIGKILL);
+      exit(0);
+    }
+    print $d;
+    exit(0);
+  }
+}
+
+header("HTTP/1.1 404 Nope");
+?>

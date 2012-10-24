@@ -1,0 +1,8 @@
+Scripts:
+
+kp   - This is the entry point for the user. PHP-script that generates a base layout with references to kp.js.
+       CAS-Authentication is also performed here.
+
+_exe - Details about jobs. REST-like interface. Session-cookie is verified.
+
+So the basic concept is that the user logs in via kp. Then javascripts will pull in the rest of the information and display.
