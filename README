@@ -1,0 +1,79 @@
+# php.ini
+# short_open_tag = On
+# date.timezone = "Europe/Stockholm";
+# PCNTL functions nneeded.
+
+<Directory "/opt/apache/htdocs/kp">
+    Options ExecCGI
+    AcceptPathInfo On
+    SetEnv KPHOME /var/lib/kp
+    SetEnv KPSESSIONTIMEOUT 480
+    SetEnv KPCOOKIETIMEOUT 480
+    SetEnv KPCASURL "https://cas.user.uu.se/cas"
+    SetEnv KPCASSERVICE	"http://jens.its.uu.se/kp/kp"
+    <Files "kp">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_exe">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_auth">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_view">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_tags">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_log">
+    	      SetHandler cgi-script
+    </Files>
+    <Files "_logout">
+    	      SetHandler cgi-script
+    </Files>
+</Directory>
+
+$KPHOME/log and $KPHOME/tmp must be writable by kp.
+
+Anatomy of a job
+----------------
+
+Jobs are created in a subdirectory under $KPHOME/exe. One subdir per job.
+
+The files in this drectory are:
+name [optional]
+     Name that may contain spaces etc, for display to user.
+
+description
+     Text describing the job. Usage and purpose.
+
+roles
+     Names of roles that are allowed to see and execute this job. One per line. Newline delimited.
+
+run [optional]
+
+tags
+     Tags to allow finding the job via the URL.
+
+param1 [optional]
+     Description of the first parameter that the user must supply for job execution.
+
+param2 [optional]
+     Description of the second parameter that the user must supply for job execution.
+
+param3 [optional]
+     Description of the third parameter that the user must supply for job execution.
+
+Parameter description
+---------------------
+
+<text>: text <content>
+<text>: select <content> <options>
+
+content: alpha|alnum
+Types: text|select
+
+Examples.
+Select a value: select alnum A B C D
+Input some text: text alpha
