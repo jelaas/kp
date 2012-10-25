@@ -1,4 +1,4 @@
-#!/opt/php-5.3/bin/php-cgi -f
+#!/usr/bin/env php-cgi
 <?php
 # Local Variables:
 # mode: php
