@@ -55,7 +55,8 @@ description
      Text describing the job. Usage and purpose.
 
 roles
-     Names of roles that are allowed to see and execute this job. One per line. Newline delimited.
+     Names of roles that are allowed to see and execute this job. One per line.
+     Newline delimited.
 
 run [optional]
 
