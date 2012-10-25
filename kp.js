@@ -1,3 +1,9 @@
+/*
+ * Implements the javascript frontend of 'kp'.
+ *
+ * Copyright: Jens Låås, UU 2012
+ * Copyright license: According to GPL, see file LICENSE in this directory.
+ */
 var baseurl;
 var glob_logid = 0;
 var jobs = [ ];
