@@ -1,7 +1,21 @@
-# php.ini
-# short_open_tag = On
-# date.timezone = "Europe/Stockholm";
-# PCNTL functions nneeded.
+Administrative Control Panel
+----------------------------
+
+Authentication method: CAS.
+Authorization: roles.
+
+
+PHP.ini
+-------
+
+PHP used must have PCNTL support.
+
+Below are the PHP optios I know must be set (pick your own timezone obviously):
+ short_open_tag = On
+ date.timezone = "Europe/Stockholm";
+
+Apache config
+-------------
 
 <Directory "/opt/apache/htdocs/kp">
     Options ExecCGI
@@ -9,32 +23,24 @@
     SetEnv KPHOME /var/lib/kp
     SetEnv KPSESSIONTIMEOUT 480
     SetEnv KPCOOKIETIMEOUT 480
-    SetEnv KPCASURL "https://cas.user.uu.se/cas"
-    SetEnv KPCASSERVICE	"http://jens.its.uu.se/kp/kp"
+    SetEnv KPCASURL "https://cas.url.example/cas"
+    SetEnv KPCASSERVICE	"http://kp.example/kp/kp"
     <Files "kp">
     	      SetHandler cgi-script
     </Files>
-    <Files "_exe">
-    	      SetHandler cgi-script
-    </Files>
-    <Files "_auth">
-    	      SetHandler cgi-script
-    </Files>
-    <Files "_view">
-    	      SetHandler cgi-script
-    </Files>
-    <Files "_tags">
-    	      SetHandler cgi-script
-    </Files>
-    <Files "_log">
-    	      SetHandler cgi-script
-    </Files>
-    <Files "_logout">
+    <Files ~ "^_(exe|auth|view|tags|log|logout)$">
     	      SetHandler cgi-script
     </Files>
 </Directory>
 
 $KPHOME/log and $KPHOME/tmp must be writable by kp.
+
+Authorization
+-------------
+
+Populate $KPHOME/auth with files corresponding to roles.
+Each file (rolefile) should contain a newline delimited list of usernames.
+Users with their username in a rolefile will have access to all jobs with this role in its 'roles' file.
 
 Anatomy of a job
 ----------------
