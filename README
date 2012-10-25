@@ -78,8 +78,12 @@ Parameter description
 <text>: text <content>
 <text>: select <content> <options>
 
-content: alpha|alnum
+content: alpha|alnum|num
 Types: text|select
+
+alpha: [A-Za-z]+
+alnum: [A-Za-z0-9]+
+num: [0-9]+
 
 Examples.
 Select a value: select alnum A B C D
