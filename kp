@@ -14,39 +14,57 @@ $SERVICE=$_SERVER["KPCASSERVICE"].$PI;
 
 if(!$root) {
   header("HTTP/1.1 500 Configuration error. KPHOME undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPHOME undefined.";
   exit(0);
 }
 if(!$CASURL) {
   header("HTTP/1.1 500 Configuration error. KPCASURL undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPCASURL undefined.";
   exit(0);
 }
 if(!$SERVICE) {
   header("HTTP/1.1 500 Configuration error. KPCASSERVICE undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPCASSERVICE undefined.";
   exit(0);
 }
 if(!$_SERVER["KPSESSIONTIMEOUT"]) {
   header("HTTP/1.1 500 Configuration error. KPSESSIONTIMEOUT undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPSESSIONTIMEOUT undefined.";
   exit(0);  
 }
 if(!$_SERVER["KPCOOKIETIMEOUT"]) {
   header("HTTP/1.1 500 Configuration error. KPCOOKIETIMEOUT undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPCOOKIETIMEOUT undefined.";
   exit(0);  
 }
 
 if(!file_exists($root."/tmp")) {
   header("HTTP/1.1 500 Configuration error. $root/tmp");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/tmp";
   exit(0);
 }
 if(!file_exists($root."/exe")) {
   header("HTTP/1.1 500 Configuration error. $root/exe");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/exe";
   exit(0);
 }
 if(!file_exists($root."/log")) {
   header("HTTP/1.1 500 Configuration error. $root/log");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/log";
   exit(0);
 }
 if(!file_exists($root."/auth")) {
   header("HTTP/1.1 500 Configuration error. $root/auth");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/auth";
   exit(0);
 }
 
@@ -98,6 +116,14 @@ if($sesid == "invalid") {
     curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
     
     $result=curl_exec ($ch);
+    if($result === FALSE) {
+      header("HTTP/1.1 500 Failed to connect to $CASURL/validate");
+      header('Content-type: text/plain');
+      print "Failed to connect to $CASURL/validate\n";
+      $e  = curl_error($ch);
+      print "curl_error: $e\n";
+      exit(0);
+    }
     $arr = explode( "\n", $result );
     $code = $arr[0];
     $name = $arr[1];
@@ -110,7 +136,12 @@ if($sesid == "invalid") {
     }
     $sesid = time() . mt_rand();
     setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/");
-    file_put_contents( $root."/tmp/KP-".$sesid, $name);
+    if(file_put_contents( $root."/tmp/KP-".$sesid, $name) === FALSE) {
+      header("HTTP/1.1 500 Failed to write to $root/auth");
+      header('Content-type: text/plain');
+      print "Failed to write to $root/auth";
+      exit(0);
+    }
     file_put_contents( $root."/log/kp.log", "User $name logged in using sesid: $sesid\n", FILE_APPEND);
   }
 }
