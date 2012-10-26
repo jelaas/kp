@@ -137,9 +137,9 @@ if($sesid == "invalid") {
     $sesid = time() . mt_rand();
     setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/");
     if(file_put_contents( $root."/tmp/KP-".$sesid, $name) === FALSE) {
-      header("HTTP/1.1 500 Failed to write to $root/auth");
+      header("HTTP/1.1 500 Failed to write to $root/tmp");
       header('Content-type: text/plain');
-      print "Failed to write to $root/auth";
+      print "Failed to write to $root/tmp";
       exit(0);
     }
     file_put_contents( $root."/log/kp.log", "User $name logged in using sesid: $sesid\n", FILE_APPEND);
