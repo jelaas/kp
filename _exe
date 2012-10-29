@@ -4,6 +4,7 @@ header('Content-type: text/plain');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
+$KPSECRETS=$_SERVER["KPSECRETS"];
 
 $sesid = $_COOKIE['session'];
 if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
@@ -113,6 +114,41 @@ function validate_param($param, $validator) {
   return 1;
 }
 
+/*
+ * Copies files from directory $src to directory $dst
+ * $dst must exist
+ */
+function copyfiles($src, $dst) {
+  if(!file_exists($dst)) return 0;
+  if(!file_exists($src)) return 0;
+  
+  if($dh = opendir($src)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      copy($src."/".$file, $dst."/".$file);
+    }
+    closedir($dh);
+  }
+}
+
+/*
+ * Removes files from directory $dst
+ */
+function deldir($dst) {
+  if(!file_exists($dst)) return 0;
+  
+  if($dh = opendir($dst)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      unlink($dst."/".$file);
+    }
+    closedir($dh);
+    rmdir($dst);
+  }
+}
+
 if($attr == description) printattr($fn);
 if($attr == name) printattr($fn);
 if($attr == param1) printattr($fn);
@@ -127,7 +163,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
   $roles = array();
 
-  # Fetch user roles
+  /* Fetch user roles */
   $dir = $root."/auth";
   if($dh = opendir($dir)) {
     while (($file = readdir($dh)) !== false) {
@@ -194,8 +230,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   }
 
   # keep session alive
-    if(file_exists($root."/tmp/KP-".$sesid))
-      touch($root."/tmp/KP-".$sesid);
+  if(file_exists($root."/tmp/KP-".$sesid))
+    touch($root."/tmp/KP-".$sesid);
 
   if($attr == run) {
     $validator = getvalidator($root, $lookup, 'param1');
@@ -237,12 +273,33 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       file_put_contents("$root/log/$d.job", $lookup);
       file_put_contents("$root/log/$d.start", time());
       file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$lookup."/roles"));
-      system("$root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+
+      $secrets = $root."/secrets/".$KPSECRETS."/".$lookup;
+      putenv("KPSECRETS"); # Security: dont leak secret to jobs
+      
+      if($_SERVER["KPSANDBOX"] == "yes") {
+	  $rundir = $root."/saferun";
+	  #system("tar cf - $secrets|sandbox $root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+      } else {
+	# create runtime directory
+	$rundir = $root."/run/".$d;
+	mkdir($rundir);
+      
+	# populate with per-job secrets
+	if(file_exists($secrets)) {
+	  copyfiles($root."/secrets/".$KPSECRETS."/".$lookup, $rundir);
+	}
+	
+	# change cwd to runtime directory
+	chdir($rundir);
+	system("$root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+	deldir($rundir);
+      }
       file_put_contents("$root/log/$d.end", time());
       file_put_contents("$root/log/$d.status", $status);
       
       # Since I never managed to close stdout and stderr within PHP, we kill our process instead.
-      # If dont do this PHP will output headers from the child also..
+      # If we dont do this PHP will output headers from the child also..
       posix_kill(posix_getpid(), SIGKILL);
       exit(0);
     }

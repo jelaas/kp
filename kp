@@ -68,6 +68,38 @@ if(!file_exists($root."/auth")) {
   exit(0);
 }
 
+# Setup runtime environment for job execution
+# Used by "_exe".
+if(!file_exists($root."/run")) {
+  header("HTTP/1.1 500 Configuration error. $root/run");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/run";
+  exit(0);
+}
+
+# Check for existence of saferun mountpoint
+if($_SERVER["KPSANDBOX"] == yes) {
+  if(!file_exists($root."/saferun")) {
+    header("HTTP/1.1 500 Configuration error. $root/saferun mountpoint");
+    header('Content-type: text/plain');
+    print "Configuration error. $root/saferun mountpoint";
+    exit(0);
+  }
+}
+
+# Used to store per job secrets, that are only available to a specific job.
+# The name of the secret directory under secrets is passed from the webserver in
+#  env KPSECRETS. Used by "_exe".
+if(!file_exists($root."/secrets")) {
+  header("HTTP/1.1 500 Configuration error. $root/secrets");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/secrets";
+  exit(0);
+}
+
+# Check that secrets are not readable by kp.
+## FIXME
+
 # Clear out old sessions
 $dir = $root."/tmp";
 $old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;

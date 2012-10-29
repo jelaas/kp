@@ -21,6 +21,7 @@ Apache config
     Options ExecCGI
     AcceptPathInfo On
 #   SetEnv PATH /opt/php-5.3/bin
+#   SetEnv KPSECRETS secretkey
     SetEnv KPHOME /var/lib/kp
     SetEnv KPSESSIONTIMEOUT 480
     SetEnv KPCOOKIETIMEOUT 480
@@ -89,3 +90,29 @@ num: [0-9]+
 Examples.
 Select a value: select alnum A B C D
 Input some text: text alpha
+
+Per job secrets
+---------------
+
+If you need to have job-specific data that must be hidden from other jobs, you can
+create a directory $KPHOME/secrets/SECRETKEY.
+
+To stop other users from figuring out the secret directory:
+$ chmod o-r $KPHOME/secrets
+Note that the directory $KPHOME/secrets must not be owned or writable by the user running kp.
+
+Configure the webserver to export the secret key:
+SetEnv KPSECRETS <SECRETKEY>
+
+Also note that this will not be completely secure unless you also use the sandbox functionality.
+
+Sandbox
+-------
+
+To isolate jobs from each other.
+Only way to keep secrets from other jobs.
+
+Needs the sandbox application: http://....
+
+SetEnv KPSANDBOX yes
+
