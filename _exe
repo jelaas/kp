@@ -155,16 +155,16 @@ function deldir($dst) {
   }
 }
 
-if($attr == description) printattr($fn);
-if($attr == name) printattr($fn);
-if($attr == param1) printattr($fn);
-if($attr == param2) printattr($fn);
-if($attr == param3) printattr($fn);
-if($attr == roles) printattr($fn);
-if($attr == tags) printattr($fn);
-if($attr == autodesc) { print "true"; exit(0); }
+if($attr == 'description') printattr($fn);
+if($attr == 'name') printattr($fn);
+if($attr == 'param1') printattr($fn);
+if($attr == 'param2') printattr($fn);
+if($attr == 'param3') printattr($fn);
+if($attr == 'roles') printattr($fn);
+if($attr == 'tags') printattr($fn);
+if($attr == 'autodesc') { print "true"; exit(0); }
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
-  if($attr == run) { print "true"; exit(0); }
+  if($attr == 'run') { print "true"; exit(0); }
 }
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
   $roles = array();
