@@ -195,9 +195,10 @@ function job_new(name) {
     job.param_display = function (name, elem, param) {
 	var arr = param.split(':');
 	elem.append("<b>" + arr[0] + ":</b> ");
-	arr = arr[1].split('\n');
+	arr = param.substring(param.indexOf(":")).split('\n');
 	arr = arr[0].split(' ');
 	arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
+	arr.shift();
 	if(arr[0] == "text") {
 	    elem.append('<input type="text" maxlength="8" size="8" name="'+name+'">');
 	    this[name+'_value'] = function () {
