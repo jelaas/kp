@@ -116,6 +116,11 @@ function validate_param($param, $validator) {
       return 0;
     return 1;
   }
+  if($validator == "url") {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>":^[A-Za-z0-9/_+.%:-]+$:"))))
+      return 0;
+    return 1;
+  }
 
   return 1;
 }
