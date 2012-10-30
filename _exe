@@ -188,11 +188,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     closedir($dh);
   } else {
     header("HTTP/1.1 503 could not open $dir");
+    file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
     exit(0);
   }
 
   if(!count($roles)) {
     header("HTTP/1.1 403 Forbidden: no roles for $name");
+    file_put_contents( $root."/log/kp.log", "Forbidden: no roles for $name\n", FILE_APPEND);
     exit(0);
   }
   
@@ -212,6 +214,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   
   if(!$permitted) {
     header("HTTP/1.1 403 Forbidden: roles");
+    file_put_contents( $root."/log/kp.log", "User $name execute: $lookup Forbidden: roles\n", FILE_APPEND);
     print_r($roles);
     exit(0);
   }
@@ -244,6 +247,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($validator) {
       if(validate_param('param1', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param1']."' validator: $validator");
+	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM1=".$_REQUEST['param1']);
@@ -252,6 +256,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($validator) {
       if(validate_param('param2', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param2']."' validator: $validator");
+	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM2=".$_REQUEST['param2']);
@@ -260,6 +265,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($validator) {
       if(validate_param('param3', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: '".$_REQUEST['param3']."' validator: $validator");
+	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM3=".$_REQUEST['param3']);
@@ -270,6 +276,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (! function_exists('pcntl_fork')) {
       header("HTTP/1.1 503 PCNTL functions not available on this PHP installation. KP wont work");
       print('PCNTL functions not available on this PHP installation. KP wont work!');
+      file_put_contents( $root."/log/kp.log", "PCNTL functions not available on this PHP installation. KP wont work!\n", FILE_APPEND);
       exit(0);
     }
     file_put_contents( $root."/log/kp.log", "User $name executes: $lookup log: $d\n", FILE_APPEND);
