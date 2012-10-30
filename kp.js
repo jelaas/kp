@@ -234,7 +234,7 @@ function job_new(name) {
 
     job.run_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
-	log_new(text);
+	if(text.length > 8) log_new(text);
     }
     
     job.run_ecb = function (xhr,status,text) {
@@ -249,11 +249,13 @@ function job_new(name) {
 	    if(event.data['param1_value']) params['param1'] = event.data.param1_value();
 	    if(event.data['param2_value']) params['param2'] = event.data.param2_value();
 	    if(event.data['param3_value']) params['param3'] = event.data.param3_value();
-	    event.data.post(baseurl + "_exe/" + event.data.name + "/run",
-			    event.data,
-			    event.data.run_cb,
-			    event.data.run_ecb,
-			    params);
+	    if(confirm("Run "+event.data.name+"?")) {
+		event.data.post(baseurl + "_exe/" + event.data.name + "/run",
+				event.data,
+				event.data.run_cb,
+				event.data.run_ecb,
+				params);
+	    }
 	});
     }
 
