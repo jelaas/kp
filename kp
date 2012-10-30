@@ -78,7 +78,7 @@ if(!file_exists($root."/run")) {
 }
 
 # Check for existence of saferun mountpoint
-if($_SERVER["KPSANDBOX"] == yes) {
+if($_SERVER["KPSANDBOX"] == 'yes') {
   if(!file_exists($root."/saferun")) {
     header("HTTP/1.1 500 Configuration error. $root/saferun mountpoint");
     header('Content-type: text/plain');
