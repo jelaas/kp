@@ -20,7 +20,7 @@ Apache config
 <Directory "/opt/apache/htdocs/kp">
     Options ExecCGI
     AcceptPathInfo On
-#   SetEnv PATH /opt/php-5.3/bin
+#   SetEnv PATH /opt/php-5.3/bin:/bin:/usr/bin
 #   SetEnv KPSECRETS secretkey
     SetEnv KPHOME /var/lib/kp
     SetEnv KPSESSIONTIMEOUT 480
