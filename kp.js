@@ -144,7 +144,7 @@ function log_new(name) {
 	logs[this.name] = undefined;
     }
 
-    log.read();
+    log.poll();
 
     log.timer = setInterval(function(){
 	log.poll();
