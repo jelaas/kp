@@ -211,7 +211,7 @@ function job_new(name) {
 	    for(i=3;i<arr.length;i++) {
 		var opttext;
 		if(arr[i].length > maxlen)
-		    opttext = arr[i].substr(arr[i].length - maxlen);
+		    opttext = ".."+arr[i].substr(arr[i].length - maxlen);
 		else
 		    opttext = arr[i];
 		options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
