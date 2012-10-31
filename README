@@ -78,7 +78,7 @@ Parameter description
 ---------------------
 
 <text>: text <content>
-<text>: select <content> <options>
+<text>: select <content> <maximum display length> <options>
 
 content: alpha|alnum|num|path|url
 Types: text|select

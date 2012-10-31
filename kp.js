@@ -207,8 +207,14 @@ function job_new(name) {
 	}
 	if(arr[0] == "select") {
 	    var options = "";
-	    for(i=2;i<arr.length;i++) {
-		options = options + '<option value="'+arr[i]+'">'+arr[i]+'</option>';
+	    var maxlen = arr[2];
+	    for(i=3;i<arr.length;i++) {
+		var opttext;
+		if(arr[i].length > maxlen)
+		    opttext = arr[i].substr(arr[i].length - maxlen);
+		else
+		    opttext = arr[i];
+		options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
 	    }
 	    elem.append('<select name="'+name+'">'+options+'</select>');
 	    this[name+'_value'] = function () {
