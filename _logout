@@ -72,6 +72,6 @@ $baseurl = implode("/", $b);
  <body>
 <hr>
 <p class="logout"> You are no longer logged in.</p>
-<p> Klick <a href="<?=$baseurl?>/kp">here</a> to relogin. </p>
+<p> Click <a href="<?=$baseurl?>/kp">here</a> to relogin. </p>
 </body>
 </html>
