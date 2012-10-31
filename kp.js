@@ -72,7 +72,7 @@ function log_new(name) {
 	if(this.status == "0")
 	    $('#logstatus_'+this.id).css("background-color","lightgreen");
 	else
-	    $('#logstatus_'+this.id).css("background-color","lightred");
+	    $('#logstatus_'+this.id).css("background-color","#f88");
     };
     
     log.attr_cb = function (text,status,xhr) {
