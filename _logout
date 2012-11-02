@@ -47,8 +47,13 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
   }
 }
 
+if(isset($_SERVER["PATH_INFO"]))
+  $PI=$_SERVER["PATH_INFO"];
+else
+  $PI="";
+
 $a = explode("?", $_SERVER['REQUEST_URI']);
-$baseurl = substr($a[0], 0, strlen($a[0])-strlen($_SERVER["PATH_INFO"]));
+$baseurl = substr($a[0], 0, strlen($a[0])-strlen($PI));
 $b = explode("/", $baseurl);
 array_pop($b);
 $baseurl = implode("/", $b);

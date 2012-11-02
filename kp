@@ -8,7 +8,10 @@ header('Content-type: text/html');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
-$PI=$_SERVER["PATH_INFO"];
+if(isset($_SERVER["PATH_INFO"]))
+  $PI=$_SERVER["PATH_INFO"];
+else
+  $PI="";
 $CASURL=$_SERVER["KPCASURL"];
 $SERVICE=$_SERVER["KPCASSERVICE"].$PI;
 
@@ -78,18 +81,21 @@ if(!file_exists($root."/run")) {
 }
 
 # Check for existence of saferun mountpoint
-if($_SERVER["KPSANDBOX"] == 'yes') {
-  if(!file_exists($root."/saferun")) {
-    header("HTTP/1.1 500 Configuration error. $root/saferun mountpoint");
-    header('Content-type: text/plain');
-    print "Configuration error. $root/saferun mountpoint";
-    exit(0);
+if(isset($_SERVER["KPSANDBOX"]))
+  if($_SERVER["KPSANDBOX"] == 'yes') {
+    if(!file_exists($root."/saferun")) {
+      header("HTTP/1.1 500 Configuration error. $root/saferun mountpoint");
+      header('Content-type: text/plain');
+      print "Configuration error. $root/saferun mountpoint";
+      exit(0);
+    }
   }
-}
 
-# Used to store per job secrets, that are only available to a specific job.
-# The name of the secret directory under secrets is passed from the webserver in
-#  env KPSECRETS. Used by "_exe".
+/* 
+ * Used to store per job secrets, that are only available to a specific job.
+ * The name of the secret directory under secrets is passed from the webserver in
+ *  env KPSECRETS. Used by "_exe".
+ */
 if(!file_exists($root."/secrets")) {
   header("HTTP/1.1 500 Configuration error. $root/secrets");
   header('Content-type: text/plain');
@@ -147,10 +153,10 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
 }
 
 if($sesid == "invalid") {
-  $ticket = $_REQUEST['ticket'];
-  if (!isset($ticket)) {
+  if (!isset($_REQUEST['ticket'])) {
     header("Location: $CASURL/login?service=".$SERVICE);
   } else {
+    $ticket = $_REQUEST['ticket'];
     $ch = curl_init ("$CASURL/validate?service=".$SERVICE."&ticket=$ticket");
     curl_setopt ($ch, CURLOPT_HEADER, 0);
     curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -164,16 +170,18 @@ if($sesid == "invalid") {
       print "curl_error: $e\n";
       exit(0);
     }
+    curl_close ($ch);
+
     $arr = explode( "\n", $result );
     $code = $arr[0];
-    $name = $arr[1];
-    $pgt = $arr[2];
-    curl_close ($ch);
     
     if ($code != "yes" ) {
       header("Location: $CASURL/login?service=".$SERVICE);
       exit(0);
     }
+    $name = $arr[1];
+    $pgt = $arr[2];
+
     $sesid = time() . mt_rand();
     setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/");
     if(file_put_contents( $root."/tmp/KP-".$sesid, $name) === FALSE) {
@@ -186,8 +194,7 @@ if($sesid == "invalid") {
   }
 }
 
-$ticket = $_REQUEST['ticket'];
-if (isset($ticket)) {
+if (isset($_REQUEST['ticket'])) {
   header("Location: $SERVICE");
   exit(0);
 }
