@@ -195,10 +195,22 @@ function job_new(name) {
 	$('#jobname_'+this.name).empty();
 	$('#jobname_'+this.name).append(this.nicename);
     }
+    job.roles_display = function () {
+	$('#roles_'+this.name).empty();
+	if(this.edit) {
+	    $('#roles_'+this.name).append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
+	}
+    }
+    job.tags_display = function () {
+	$('#tags_'+this.name).empty();
+	if(this.edit) {
+	    $('#tags_'+this.name).append('Tags:<br><textarea  cols=10 rows=5>'+this.tags+'</textarea>');
+	}
+    }
     job.description_display = function () {
 	$('#description_'+this.name).empty();
 	if(this.edit) {
-	    $('#description_'+this.name).append('<textarea  cols=60 rows=15>'+this.description+'</textarea>');
+	    $('#description_'+this.name).append('Description:<br><textarea  cols=60 rows=15>'+this.description+'</textarea>');
 	    this.description_value = function () {
 		return $('#description_'+this.name+' textarea').val();
 	    }
@@ -211,7 +223,7 @@ function job_new(name) {
 	    var val = "";
 	    if(this[name]!==undefined)
 		val = this[name];
-	    elem.append('<textarea  cols=20 rows=5>'+val+'</textarea>');
+	    elem.append(name + '<br><textarea  cols=20 rows=5>'+val+'</textarea>');
 	    this[name+'_value'] = function () {
 		return $('#'+name+'_'+this.name+' textarea').val();
 	    }
@@ -281,7 +293,7 @@ function job_new(name) {
     job.run_display = function () {
 	$('#run_'+this.name).empty();
 	if(this.edit) {
-	    $('#run_'+this.name).append('<textarea  cols=60 rows=15>'+this.run+'</textarea>');
+	    $('#run_'+this.name).append('Script<br><textarea  cols=60 rows=15>'+this.run+'</textarea>');
 	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Update</button>');
 	    this.run_value = function () {
 		return $('#run_'+this.name+' textarea').val();
@@ -370,6 +382,14 @@ function job_new(name) {
 	    this.job.run = text;
 	    this.job.run_display();
 	}
+	if(this.attr == "roles") {
+	    this.job.roles = text;
+	    this.job.roles_display();
+	}
+	if(this.attr == "tags") {
+	    this.job.tags = text;
+	    this.job.tags_display();
+	}
     }
     
     job.history_cb = function (text,status,xhr) {
@@ -389,6 +409,8 @@ function job_new(name) {
 	this.param3_display();
 	this.edit_display();
 	this.run_display();
+	this.roles_display();
+	this.tags_display();
 	this.description_display();
     }
     job.read = function () {
@@ -399,6 +421,8 @@ function job_new(name) {
 	this.read_attr("param2");
 	this.read_attr("param3");
 	this.read_attr("run");
+	this.read_attr("roles");
+	this.read_attr("tags");
 	this.read_history();
 	this.edit_display();
     };
@@ -414,7 +438,11 @@ function job_new(name) {
 			       '</td>' +
 			       '</tr><tr class="jobrow" id="jobdata_' +
 			       this.name + '">' +
-			       '<td valign=top class="desc" id="description_' + this.name + '"></td>' +
+			       '<td valign=top><table border="0">' + 
+			       '<tr><td class="desc" id="description_' + this.name + '"></td></tr>' +
+			       '<tr><td id="roles_' + this.name + '"></td></tr>' +
+			       '<tr><td id="tags_' + this.name + '"></td></tr>' +
+			       '</table></td>' +
 			       '<td NOWRAP><table border="0">' + 
 			       '<tr><td class="param" id="param1_' + this.name + '"></td></tr>' +
 			       '<tr><td class="param" id="param2_' + this.name + '"></td></tr>' +
