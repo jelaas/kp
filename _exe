@@ -64,9 +64,11 @@ if(!file_exists($root."/exe/".$lookup)) {
   header("HTTP/1.1 404 job does not exist");
   exit(0);
 }
-if(!file_exists($root."/exe/".$lookup."/".$attr)) {
-  header("HTTP/1.1 404 attribute does not exist");
-  exit(0);
+if($attr != "update") {
+  if(!file_exists($root."/exe/".$lookup."/".$attr)) {
+    header("HTTP/1.1 404 attribute does not exist");
+    exit(0);
+  }
 }
 
 $fn = $root."/exe/".$lookup."/".$attr;
@@ -169,7 +171,17 @@ if($attr == 'roles') printattr($fn);
 if($attr == 'tags') printattr($fn);
 if($attr == 'autodesc') { print "true"; exit(0); }
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
-  if($attr == 'run') { print "true"; exit(0); }
+  if($attr == 'run') {
+    if(!file_exists($root."/exe/".$lookup."/creator")) {
+      print "true1"; exit(0);
+    }
+    $creator = rtrim(file_get_contents($root."/exe/".$lookup."/creator"));
+    if($creator != $name) {
+      print "true"; exit(0);
+    } else {
+      printattr($fn);
+    }
+  }
 }
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
   $roles = array();
@@ -247,6 +259,26 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   if(file_exists($root."/tmp/KP-".$sesid))
     touch($root."/tmp/KP-".$sesid);
 
+  # Update job
+  # <job>/creator must be user
+  if($attr == 'update') {
+    if(!file_exists($root."/exe/".$lookup."/creator")) {
+	header("HTTP/1.1 403 Forbidden: no creator");
+	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $lookup", FILE_APPEND);
+	exit(0);
+    }
+    $creator = file_get_contents($root."/exe/".$lookup."/creator");
+    if($creator != $name) {
+	header("HTTP/1.1 403 Forbidden: not creator");
+	print "not creator $creator";
+	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $lookup", FILE_APPEND);
+	exit(0);
+    }
+    file_put_contents( $root."/log/kp.log", "User $name update: $lookup description: '".$_REQUEST['description']."\n", FILE_APPEND);
+    exit(0);
+  }
+
+  # Execute job
   if($attr == 'run') {
     $validator = getvalidator($root, $lookup, 'param1');
     if($validator) {
