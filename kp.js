@@ -199,12 +199,18 @@ function job_new(name) {
 	$('#roles_'+this.name).empty();
 	if(this.edit) {
 	    $('#roles_'+this.name).append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
+	    this.roles_value = function () {
+		return $('#roles_'+this.name+' textarea').val();
+	    }
 	}
     }
     job.tags_display = function () {
 	$('#tags_'+this.name).empty();
 	if(this.edit) {
 	    $('#tags_'+this.name).append('Tags:<br><textarea  cols=10 rows=5>'+this.tags+'</textarea>');
+	    this.tags_value = function () {
+		return $('#tags_'+this.name+' textarea').val();
+	    }
 	}
     }
     job.description_display = function () {
@@ -304,6 +310,8 @@ function job_new(name) {
 		params['param2'] = event.data.param2_value();
 		params['param3'] = event.data.param3_value();
 		params['description'] = event.data.description_value();
+		params['tags'] = event.data.tags_value();
+		params['roles'] = event.data.roles_value();
 		params['run'] = event.data.run_value();
 		event.data.post(baseurl + "_exe/" + event.data.name + "/update",
 				event.data,
