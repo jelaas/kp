@@ -169,6 +169,7 @@ function job_new(name) {
     
     jobs[job.name] = job;
     
+    job.edit = 0;
     job.name = name;
     job.ajax = function (url, context, callback) {
 	$.ajax({
@@ -196,35 +197,53 @@ function job_new(name) {
     }
     job.description_display = function () {
 	$('#description_'+this.name).empty();
-	$('#description_'+this.name).append(this.description);
+	if(this.edit) {
+	    $('#description_'+this.name).append('<textarea  cols=60 rows=15>'+this.description+'</textarea>');
+	    this.description_value = function () {
+		return $('#description_'+this.name+' textarea').val();
+	    }
+	} else {
+	    $('#description_'+this.name).append(this.description);
+	}
     }
     job.param_display = function (name, elem, param) {
-	var arr = param.split(':');
-	elem.append("<b>" + arr[0] + ":</b> ");
-	arr = param.substring(param.indexOf(":")).split('\n');
-	arr = arr[0].split(' ');
-	arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
-	arr.shift();
-	if(arr[0] == "text") {
-	    elem.append('<input type="text" maxlength="8" size="8" name="'+name+'">');
+	if(this.edit) {
+	    var val = "";
+	    if(this[name]!==undefined)
+		val = this[name];
+	    elem.append('<textarea  cols=20 rows=5>'+val+'</textarea>');
 	    this[name+'_value'] = function () {
-		return $('#'+name+'_'+this.name+' input').val();
+		return $('#'+name+'_'+this.name+' textarea').val();
 	    }
-	}
-	if(arr[0] == "select") {
-	    var options = "";
-	    var maxlen = arr[2];
-	    for(i=3;i<arr.length;i++) {
-		var opttext;
-		if(arr[i].length > maxlen)
-		    opttext = ".."+arr[i].substr(arr[i].length - maxlen);
-		else
-		    opttext = arr[i];
-		options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
+	} else {
+	    if(param === undefined) return;
+	    var arr = param.split(':');
+	    elem.append("<b>" + arr[0] + ":</b> ");
+	    arr = param.substring(param.indexOf(":")).split('\n');
+	    arr = arr[0].split(' ');
+	    arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
+	    arr.shift();
+	    if(arr[0] == "text") {
+		elem.append('<input type="text" maxlength="8" size="8">');
+		this[name+'_value'] = function () {
+		    return $('#'+name+'_'+this.name+' input').val();
+		}
 	    }
-	    elem.append('<select name="'+name+'">'+options+'</select>');
-	    this[name+'_value'] = function () {
-		return $('#'+name+'_'+this.name+' select').val();
+	    if(arr[0] == "select") {
+		var options = "";
+		var maxlen = arr[2];
+		for(i=3;i<arr.length;i++) {
+		    var opttext;
+		    if(arr[i].length > maxlen)
+			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
+		    else
+			opttext = arr[i];
+		    options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
+		}
+		elem.append('<select>'+options+'</select>');
+		this[name+'_value'] = function () {
+		    return $('#'+name+'_'+this.name+' select').val();
+		}
 	    }
 	}
     }
@@ -249,6 +268,11 @@ function job_new(name) {
 	$('#msg_'+this.name).empty();
 	if(text.length > 8) log_new(text);
     }
+    job.update_cb = function (text,status,xhr) {
+	$('#msg_'+this.name).empty();
+	this.edit = 0;
+	this.display();
+    }
     
     job.run_ecb = function (xhr,status,text) {
 	this.message_display("ERR: " + xhr.status +  " " + text);
@@ -256,20 +280,58 @@ function job_new(name) {
     
     job.run_display = function () {
 	$('#run_'+this.name).empty();
-	$('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Run</button>');
-	$('#runlink_'+this.name).click(this, function(event) {
-	    var params = {};
-	    if(event.data['param1_value']) params['param1'] = event.data.param1_value();
-	    if(event.data['param2_value']) params['param2'] = event.data.param2_value();
-	    if(event.data['param3_value']) params['param3'] = event.data.param3_value();
-	    if(confirm("Run "+event.data.name+"?")) {
-		event.data.post(baseurl + "_exe/" + event.data.name + "/run",
+	if(this.edit) {
+	    $('#run_'+this.name).append('<textarea  cols=60 rows=15>'+this.run+'</textarea>');
+	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Update</button>');
+	    this.run_value = function () {
+		return $('#run_'+this.name+' textarea').val();
+	    };
+	    $('#runlink_'+this.name).click(this, function(event) {
+		var params = {};
+		params['param1'] = event.data.param1_value();
+		params['param2'] = event.data.param2_value();
+		params['param3'] = event.data.param3_value();
+		params['description'] = event.data.description_value();
+		params['run'] = event.data.run_value();
+		event.data.post(baseurl + "_exe/" + event.data.name + "/update",
 				event.data,
-				event.data.run_cb,
+				event.data.update_cb,
 				event.data.run_ecb,
 				params);
-	    }
-	});
+	    });
+	} else {
+	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Run</button>');
+	    $('#runlink_'+this.name).click(this, function(event) {
+		var params = {};
+		if(event.data['param1_value']) params['param1'] = event.data.param1_value();
+		if(event.data['param2_value']) params['param2'] = event.data.param2_value();
+		if(event.data['param3_value']) params['param3'] = event.data.param3_value();
+		if(confirm("Run "+event.data.name+"?")) {
+		    event.data.post(baseurl + "_exe/" + event.data.name + "/run",
+				    event.data,
+				    event.data.run_cb,
+				    event.data.run_ecb,
+				    params);
+		}
+	    });
+	}
+    }
+
+    job.edit_display = function () {
+	$('#jobedit_'+this.name).empty();
+	if(job.edit) {
+	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'close.png">');
+	    $('#jobeditmode_'+this.name).click(this, function(event) {
+		event.data.edit = 0;
+		event.data.display();
+	    });
+	} else {
+	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
+	    $('#jobeditmode_'+this.name).click(this, function(event) {
+		event.data.edit = 1;
+		event.data.display();
+	    });
+	}
     }
 
     job.history_display = function () {
@@ -321,6 +383,14 @@ function job_new(name) {
     job.read_history = function () {
 	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
+    job.display = function () {
+	this.param1_display();
+	this.param2_display();
+	this.param3_display();
+	this.edit_display();
+	this.run_display();
+	this.description_display();
+    }
     job.read = function () {
 	this.framework_create();
 	this.read_attr("description");
@@ -330,6 +400,7 @@ function job_new(name) {
 	this.read_attr("param3");
 	this.read_attr("run");
 	this.read_history();
+	this.edit_display();
     };
     
     job.framework_create = function () {
@@ -338,7 +409,9 @@ function job_new(name) {
 			       this.name +
 			       '"><td COLSPAN=2>' +
 			       '<img WIDTH=18 HEIGHT=18 id="jobtoggle_'+this.name+'" src="'+baseurl+'plus.png">&nbsp;' +
-			       '<span class="name" id="jobname_' + this.name + '">'+this.name+'</span></td>' +
+			       '<span class="name" id="jobname_' + this.name + '">'+this.name+'</span>&nbsp;' +
+			       '<span class="name" id="jobedit_' + this.name + '"></span>&nbsp;' +
+			       '</td>' +
 			       '</tr><tr class="jobrow" id="jobdata_' +
 			       this.name + '">' +
 			       '<td valign=top class="desc" id="description_' + this.name + '"></td>' +
