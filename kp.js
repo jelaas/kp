@@ -163,6 +163,12 @@ function log_new(name) {
 function job_new(name) {
     var job;
     job = {};
+    
+    if(jobs[name])
+	return undefined;
+    
+    jobs[job.name] = job;
+    
     job.name = name;
     job.ajax = function (url, context, callback) {
 	$.ajax({
@@ -371,18 +377,16 @@ function job_new(name) {
 	job.poll();
     }, 5000);
 
+    job.read();
     return job;
 }
 
 function gotlist(text) {
     var arr = text.split('\n');
-    var job;
     
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
-	job = job_new(arr[i]);
-	jobs[job.name] = job;
-	job.read();
+	job_new(arr[i]);
     }
 }
 
