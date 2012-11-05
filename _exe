@@ -6,6 +6,8 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 $root=$_SERVER["KPHOME"];
 $KPSECRETS=$_SERVER["KPSECRETS"];
 
+date_default_timezone_set(ini_get('date.timezone'));
+
 $sesid = $_COOKIE['session'];
 if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
   header("HTTP/1.1 403 Forbidden: invalid session");
@@ -145,6 +147,12 @@ function copyfiles($src, $dst) {
   }
 }
 
+function kp_log($root, $message) {
+  $d = date("Ymd\-G\:i\:s");
+  $message = str_replace("\n", " ", $message);
+  file_put_contents( $root."/log/kp.log", $d." ".$message."\n", FILE_APPEND);
+}
+
 /*
  * Removes files from directory $dst
  */
@@ -264,17 +272,95 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   if($attr == 'update') {
     if(!file_exists($root."/exe/".$lookup."/creator")) {
 	header("HTTP/1.1 403 Forbidden: no creator");
-	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $lookup", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $lookup\n", FILE_APPEND);
 	exit(0);
     }
-    $creator = file_get_contents($root."/exe/".$lookup."/creator");
+    $creator = rtrim(file_get_contents($root."/exe/".$lookup."/creator"));
     if($creator != $name) {
 	header("HTTP/1.1 403 Forbidden: not creator");
 	print "not creator $creator";
-	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $lookup", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $lookup\n", FILE_APPEND);
 	exit(0);
     }
-    file_put_contents( $root."/log/kp.log", "User $name update: $lookup description: '".$_REQUEST['description']."\n", FILE_APPEND);
+    kp_log( $root, "User $name updates $lookup");
+    if(file_put_contents( $root."/exe/".$lookup."/description", $_REQUEST['description'])===FALSE) {
+      kp_log( $root, "User $name updates $lookup. description failed");
+      header("HTTP/1.1 500 User $name updates $lookup. Failed to update description");
+      exit(0);
+    }
+    if(strlen($_REQUEST['nicename']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/name", $_REQUEST['nicename'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. nicename failed");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update nicename");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/name");
+      unlink( $root."/exe/".$lookup."/name" );
+    }
+    if(strlen($_REQUEST['adminroles']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/adminroles", $_REQUEST['adminroles'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. adminroles failed\n");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update adminroles");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/adminroles");
+      unlink( $root."/exe/".$lookup."/adminroles" );
+    }
+
+    if(file_put_contents( $root."/exe/".$lookup."/roles", $_REQUEST['roles'])===FALSE) {
+      kp_log( $root, "User $name updates $lookup. roles failed\n");
+      header("HTTP/1.1 500 User $name updates $lookup. Failed to update roles");
+      exit(0);
+    }
+    if(file_put_contents( $root."/exe/".$lookup."/tags", $_REQUEST['tags'])===FALSE) {
+      kp_log( $root, "User $name updates $lookup. tags failed\n");
+      header("HTTP/1.1 500 User $name updates $lookup. Failed to update tags");
+      exit(0);
+    }
+
+    if(strlen($_REQUEST['param1']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/param1", $_REQUEST['param1'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. param1 failed\n");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param1");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/param1");
+      unlink( $root."/exe/".$lookup."/param1" );
+    }
+    if(strlen($_REQUEST['param2']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/param2", $_REQUEST['param2'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. param2 failed\n");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param2");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/param2");
+      unlink( $root."/exe/".$lookup."/param2" );
+    }
+    if(strlen($_REQUEST['param3']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/param3", $_REQUEST['param3'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. param3 failed\n");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param3");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/param3");
+      unlink( $root."/exe/".$lookup."/param3" );
+    }
+    if(strlen($_REQUEST['run']) > 1) {
+      if(file_put_contents( $root."/exe/".$lookup."/run", $_REQUEST['run'])===FALSE) {
+	kp_log( $root, "User $name updates $lookup. run failed\n");
+	header("HTTP/1.1 500 User $name updates $lookup. Failed to update run");
+	exit(0);
+      }
+    } else {
+      kp_log($root, "User $name removes $lookup/run");
+      unlink( $root."/exe/".$lookup."/run" );
+    }
+
     exit(0);
   }
 
@@ -311,7 +397,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       putenv("PARAM3=".$_REQUEST['param3']);
     }
     
-    date_default_timezone_set(ini_get('date.timezone'));
     $d = date("Ymd\-G\:i\:s\-").$name;
     if (! function_exists('pcntl_fork')) {
       header("HTTP/1.1 503 PCNTL functions not available on this PHP installation. KP wont work");
