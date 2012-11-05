@@ -171,6 +171,8 @@ function job_new(name) {
     
     job.edit = 0;
     job.name = name;
+    job.nicename = name;
+    job.adminroles = '';
     job.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
@@ -193,6 +195,13 @@ function job_new(name) {
     };
     job.nicename_display = function () {
 	$('#jobname_'+this.name).empty();
+	if(this.edit) {
+	    $('#jobname_'+this.name).append('<input type="text" value="'+this.nicename+'">');
+	    this.nicename_value = function () {
+		return $('#jobname_'+this.name+' input').val();
+            }
+	    return;
+	}
 	$('#jobname_'+this.name).append(this.nicename);
     }
     job.roles_display = function () {
@@ -201,6 +210,15 @@ function job_new(name) {
 	    $('#roles_'+this.name).append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
 	    this.roles_value = function () {
 		return $('#roles_'+this.name+' textarea').val();
+	    }
+	}
+    }
+    job.adminroles_display = function () {
+	$('#adminroles_'+this.name).empty();
+	if(this.edit) {
+	    $('#adminroles_'+this.name).append('Admin roles:<br><textarea  cols=10 rows=5>'+this.adminroles+'</textarea>');
+	    this.adminroles_value = function () {
+		return $('#adminroles_'+this.name+' textarea').val();
 	    }
 	}
     }
@@ -306,12 +324,14 @@ function job_new(name) {
 	    };
 	    $('#runlink_'+this.name).click(this, function(event) {
 		var params = {};
+		params['nicename'] = event.data.nicename_value();
 		params['param1'] = event.data.param1_value();
 		params['param2'] = event.data.param2_value();
 		params['param3'] = event.data.param3_value();
 		params['description'] = event.data.description_value();
 		params['tags'] = event.data.tags_value();
 		params['roles'] = event.data.roles_value();
+		params['adminroles'] = event.data.adminroles_value();
 		params['run'] = event.data.run_value();
 		event.data.post(baseurl + "_exe/" + event.data.name + "/update",
 				event.data,
@@ -394,6 +414,10 @@ function job_new(name) {
 	    this.job.roles = text;
 	    this.job.roles_display();
 	}
+	if(this.attr == "adminroles") {
+	    this.job.adminroles = text;
+	    this.job.adminroles_display();
+	}
 	if(this.attr == "tags") {
 	    this.job.tags = text;
 	    this.job.tags_display();
@@ -412,12 +436,14 @@ function job_new(name) {
 	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
     job.display = function () {
+	this.nicename_display();
 	this.param1_display();
 	this.param2_display();
 	this.param3_display();
 	this.edit_display();
 	this.run_display();
 	this.roles_display();
+	this.adminroles_display();
 	this.tags_display();
 	this.description_display();
     }
@@ -430,6 +456,7 @@ function job_new(name) {
 	this.read_attr("param3");
 	this.read_attr("run");
 	this.read_attr("roles");
+	this.read_attr("adminroles");
 	this.read_attr("tags");
 	this.read_history();
 	this.edit_display();
@@ -448,6 +475,7 @@ function job_new(name) {
 			       this.name + '">' +
 			       '<td valign=top><table border="0">' + 
 			       '<tr><td class="desc" id="description_' + this.name + '"></td></tr>' +
+			       '<tr><td id="adminroles_' + this.name + '"></td></tr>' +
 			       '<tr><td id="roles_' + this.name + '"></td></tr>' +
 			       '<tr><td id="tags_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
