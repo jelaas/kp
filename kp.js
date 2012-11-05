@@ -308,6 +308,7 @@ function job_new(name) {
 	$('#msg_'+this.name).empty();
 	this.edit = 0;
 	this.display();
+	this.read();
     }
     
     job.run_ecb = function (xhr,status,text) {
