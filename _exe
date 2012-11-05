@@ -24,9 +24,9 @@ if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>
 }
 
 $a=explode("/", $_SERVER["PATH_INFO"]);
-$lookup=$a[1];
+$job=$a[1];
 $attr=$a[2];
-if (!filter_var($lookup, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[-_a-zA-Z0-9]+$/")))) {
+if (!filter_var($job, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[-_a-zA-Z0-9]+$/")))) {
   header("HTTP/1.1 403 Forbidden: invalid job syntax");
   exit(0);
 }
@@ -47,7 +47,7 @@ if($attr == "logs") {
       if($ending != "job") continue;
       $fn = $dir."/".$file;
       $logjob=file_get_contents($fn);
-      if($logjob == $lookup) {
+      if($logjob == $job) {
 	$f = strstr($file,'.', 1);
 	array_push($history, $f);
       }
@@ -62,18 +62,18 @@ if($attr == "logs") {
   exit(0);
 }
 
-if(!file_exists($root."/exe/".$lookup)) {
+if(!file_exists($root."/exe/".$job)) {
   header("HTTP/1.1 404 job does not exist");
   exit(0);
 }
 if($attr != "update") {
-  if(!file_exists($root."/exe/".$lookup."/".$attr)) {
+  if(!file_exists($root."/exe/".$job."/".$attr)) {
     header("HTTP/1.1 404 attribute does not exist");
     exit(0);
   }
 }
 
-$fn = $root."/exe/".$lookup."/".$attr;
+$fn = $root."/exe/".$job."/".$attr;
 
 function printattr($fn) {
   $out = file_get_contents($fn);
@@ -180,10 +180,10 @@ if($attr == 'tags') printattr($fn);
 if($attr == 'autodesc') { print "true"; exit(0); }
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'run') {
-    if(!file_exists($root."/exe/".$lookup."/creator")) {
+    if(!file_exists($root."/exe/".$job."/creator")) {
       print "true1"; exit(0);
     }
-    $creator = rtrim(file_get_contents($root."/exe/".$lookup."/creator"));
+    $creator = rtrim(file_get_contents($root."/exe/".$job."/creator"));
     if($creator != $name) {
       print "true"; exit(0);
     } else {
@@ -224,7 +224,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   }
   
   # Check authorization
-  $fn = $root."/exe/".$lookup."/roles";
+  $fn = $root."/exe/".$job."/roles";
   $permitted=0;
   if(file_exists($fn)) {
     $jobroles=file_get_contents($fn);
@@ -239,7 +239,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   
   if(!$permitted) {
     header("HTTP/1.1 403 Forbidden: roles");
-    file_put_contents( $root."/log/kp.log", "User $name execute: $lookup Forbidden: roles\n", FILE_APPEND);
+    file_put_contents( $root."/log/kp.log", "User $name execute: $job Forbidden: roles\n", FILE_APPEND);
     print_r($roles);
     exit(0);
   }
@@ -270,95 +270,95 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   # Update job
   # <job>/creator must be user
   if($attr == 'update') {
-    if(!file_exists($root."/exe/".$lookup."/creator")) {
+    if(!file_exists($root."/exe/".$job."/creator")) {
 	header("HTTP/1.1 403 Forbidden: no creator");
-	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $lookup\n", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $job\n", FILE_APPEND);
 	exit(0);
     }
-    $creator = rtrim(file_get_contents($root."/exe/".$lookup."/creator"));
+    $creator = rtrim(file_get_contents($root."/exe/".$job."/creator"));
     if($creator != $name) {
 	header("HTTP/1.1 403 Forbidden: not creator");
 	print "not creator $creator";
-	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $lookup\n", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $job\n", FILE_APPEND);
 	exit(0);
     }
-    kp_log( $root, "User $name updates $lookup");
-    if(file_put_contents( $root."/exe/".$lookup."/description", $_REQUEST['description'])===FALSE) {
-      kp_log( $root, "User $name updates $lookup. description failed");
-      header("HTTP/1.1 500 User $name updates $lookup. Failed to update description");
+    kp_log( $root, "User $name updates $job");
+    if(file_put_contents( $root."/exe/".$job."/description", $_REQUEST['description'])===FALSE) {
+      kp_log( $root, "User $name updates $job. description failed");
+      header("HTTP/1.1 500 User $name updates $job. Failed to update description");
       exit(0);
     }
     if(strlen($_REQUEST['nicename']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/name", $_REQUEST['nicename'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. nicename failed");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update nicename");
+      if(file_put_contents( $root."/exe/".$job."/name", $_REQUEST['nicename'])===FALSE) {
+	kp_log( $root, "User $name updates $job. nicename failed");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update nicename");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/name");
-      unlink( $root."/exe/".$lookup."/name" );
+      kp_log($root, "User $name removes $job/name");
+      unlink( $root."/exe/".$job."/name" );
     }
     if(strlen($_REQUEST['adminroles']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/adminroles", $_REQUEST['adminroles'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. adminroles failed\n");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update adminroles");
+      if(file_put_contents( $root."/exe/".$job."/adminroles", $_REQUEST['adminroles'])===FALSE) {
+	kp_log( $root, "User $name updates $job. adminroles failed\n");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update adminroles");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/adminroles");
-      unlink( $root."/exe/".$lookup."/adminroles" );
+      kp_log($root, "User $name removes $job/adminroles");
+      unlink( $root."/exe/".$job."/adminroles" );
     }
 
-    if(file_put_contents( $root."/exe/".$lookup."/roles", $_REQUEST['roles'])===FALSE) {
-      kp_log( $root, "User $name updates $lookup. roles failed\n");
-      header("HTTP/1.1 500 User $name updates $lookup. Failed to update roles");
+    if(file_put_contents( $root."/exe/".$job."/roles", $_REQUEST['roles'])===FALSE) {
+      kp_log( $root, "User $name updates $job. roles failed\n");
+      header("HTTP/1.1 500 User $name updates $job. Failed to update roles");
       exit(0);
     }
-    if(file_put_contents( $root."/exe/".$lookup."/tags", $_REQUEST['tags'])===FALSE) {
-      kp_log( $root, "User $name updates $lookup. tags failed\n");
-      header("HTTP/1.1 500 User $name updates $lookup. Failed to update tags");
+    if(file_put_contents( $root."/exe/".$job."/tags", $_REQUEST['tags'])===FALSE) {
+      kp_log( $root, "User $name updates $job. tags failed\n");
+      header("HTTP/1.1 500 User $name updates $job. Failed to update tags");
       exit(0);
     }
 
     if(strlen($_REQUEST['param1']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/param1", $_REQUEST['param1'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. param1 failed\n");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param1");
+      if(file_put_contents( $root."/exe/".$job."/param1", $_REQUEST['param1'])===FALSE) {
+	kp_log( $root, "User $name updates $job. param1 failed\n");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update param1");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/param1");
-      unlink( $root."/exe/".$lookup."/param1" );
+      kp_log($root, "User $name removes $job/param1");
+      unlink( $root."/exe/".$job."/param1" );
     }
     if(strlen($_REQUEST['param2']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/param2", $_REQUEST['param2'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. param2 failed\n");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param2");
+      if(file_put_contents( $root."/exe/".$job."/param2", $_REQUEST['param2'])===FALSE) {
+	kp_log( $root, "User $name updates $job. param2 failed\n");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update param2");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/param2");
-      unlink( $root."/exe/".$lookup."/param2" );
+      kp_log($root, "User $name removes $job/param2");
+      unlink( $root."/exe/".$job."/param2" );
     }
     if(strlen($_REQUEST['param3']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/param3", $_REQUEST['param3'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. param3 failed\n");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update param3");
+      if(file_put_contents( $root."/exe/".$job."/param3", $_REQUEST['param3'])===FALSE) {
+	kp_log( $root, "User $name updates $job. param3 failed\n");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update param3");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/param3");
-      unlink( $root."/exe/".$lookup."/param3" );
+      kp_log($root, "User $name removes $job/param3");
+      unlink( $root."/exe/".$job."/param3" );
     }
     if(strlen($_REQUEST['run']) > 1) {
-      if(file_put_contents( $root."/exe/".$lookup."/run", $_REQUEST['run'])===FALSE) {
-	kp_log( $root, "User $name updates $lookup. run failed\n");
-	header("HTTP/1.1 500 User $name updates $lookup. Failed to update run");
+      if(file_put_contents( $root."/exe/".$job."/run", $_REQUEST['run'])===FALSE) {
+	kp_log( $root, "User $name updates $job. run failed\n");
+	header("HTTP/1.1 500 User $name updates $job. Failed to update run");
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $lookup/run");
-      unlink( $root."/exe/".$lookup."/run" );
+      kp_log($root, "User $name removes $job/run");
+      unlink( $root."/exe/".$job."/run" );
     }
 
     exit(0);
@@ -366,32 +366,32 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   # Execute job
   if($attr == 'run') {
-    $validator = getvalidator($root, $lookup, 'param1');
+    $validator = getvalidator($root, $job, 'param1');
     if($validator) {
       if(validate_param('param1', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param1 validator: $validator");
 	print "invalid input: '".$_REQUEST['param1']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "User $name execute: $job param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM1=".$_REQUEST['param1']);
     }
-    $validator = getvalidator($root, $lookup, 'param2');
+    $validator = getvalidator($root, $job, 'param2');
     if($validator) {
       if(validate_param('param2', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param2 validator: $validator");
 	print "invalid input: '".$_REQUEST['param2']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "User $name execute: $job param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM2=".$_REQUEST['param2']);
     }
-    $validator = getvalidator($root, $lookup, 'param3');
+    $validator = getvalidator($root, $job, 'param3');
     if($validator) {
       if(validate_param('param3', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param3 validator: $validator");
 	print "invalid input: '".$_REQUEST['param3']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $lookup param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n", FILE_APPEND);
+	file_put_contents( $root."/log/kp.log", "User $name execute: $job param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n", FILE_APPEND);
 	exit(0);
       }
       putenv("PARAM3=".$_REQUEST['param3']);
@@ -404,20 +404,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       file_put_contents( $root."/log/kp.log", "PCNTL functions not available on this PHP installation. KP wont work!\n", FILE_APPEND);
       exit(0);
     }
-    file_put_contents( $root."/log/kp.log", "User $name executes: $lookup log: $d\n", FILE_APPEND);
+    file_put_contents( $root."/log/kp.log", "User $name executes: $job log: $d\n", FILE_APPEND);
     $pid = pcntl_fork();
     if($pid == 0) {
       posix_setsid();
-      file_put_contents("$root/log/$d.job", $lookup);
+      file_put_contents("$root/log/$d.job", $job);
       file_put_contents("$root/log/$d.start", time());
-      file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$lookup."/roles"));
+      file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$job."/roles"));
 
-      $secrets = $root."/secrets/".$KPSECRETS."/".$lookup;
+      $secrets = $root."/secrets/".$KPSECRETS."/".$job;
       putenv("KPSECRETS"); # Security: dont leak secret to jobs
       
       if($_SERVER["KPSANDBOX"] == "yes") {
 	  $rundir = $root."/saferun";
-	  #system("tar cf - $secrets|sandbox $root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+	  #system("tar cf - $secrets|sandbox $root/exe/$job/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
       } else {
 	# create runtime directory
 	$rundir = $root."/run/".$d;
@@ -426,12 +426,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       
 	# populate with per-job secrets
 	if(file_exists($secrets)) {
-	  copyfiles($root."/secrets/".$KPSECRETS."/".$lookup, $rundir);
+	  copyfiles($root."/secrets/".$KPSECRETS."/".$job, $rundir);
 	}
 	
 	# change cwd to runtime directory
 	chdir($rundir);
-	system("$root/exe/$lookup/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+	system("$root/exe/$job/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
 	deldir($rundir);
       }
       file_put_contents("$root/log/$d.end", time());
