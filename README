@@ -74,6 +74,12 @@ param2 [optional]
 param3 [optional]
      Description of the third parameter that the user must supply for job execution.
 
+adminroles [optional]
+     Users with this role are allowed to edit the job-configuration.
+
+creator [optional ]
+     Username of the job creator. Is allowed to edit the job.
+
 Parameter description
 ---------------------
 
