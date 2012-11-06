@@ -315,9 +315,10 @@ function job_new(name) {
 	this.read();
     }
     job.delete_cb = function (text,status,xhr) {
-	$('#job_'+this.name).empty();
-	$('#jobdata_'+this.name).empty();
+	$('#job_'+this.name).remove();
+	$('#jobdata_'+this.name).remove();
 	jobs[this.name] = undefined;
+	if(this.timer != undefined) clearInterval(this.timer);
     }
     
     job.run_ecb = function (xhr,status,text) {
@@ -382,14 +383,18 @@ function job_new(name) {
 		event.data.display();
 	    });
 	    $('#jobdelete_'+this.name).click(this, function(event) {
-		event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
-				event.data,
-				event.data.delete_cb,
-				event.data.run_ecb,
-				{});
+		if(event.data.justcreated == 1) {
+		    event.data.delete_cb();
+		} else {
+		    event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
+				    event.data,
+				    event.data.delete_cb,
+				    event.data.run_ecb,
+				    {});
+		}
 	    });
 	} else {
-	    if(this.admin == "1") {
+	    if(this.admin == "1" || this.justcreated == 1) {
 		$('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
 		$('#jobeditmode_'+this.name).click(this, function(event) {
 		    event.data.edit = 1;
@@ -591,7 +596,7 @@ $(function () {
     if(createjob == "1") {
 	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'blueplus.png" id="createbutton">');
 	$('#createbutton').click(this, function(event) {
-	    i=1;
+	    var i=1;
 	    while(jobs[username+'-'+i] !== undefined)
 		i=i+1;
 	    job=job_new(username+'-'+i);
