@@ -311,6 +311,11 @@ function job_new(name) {
 	this.display();
 	this.read();
     }
+    job.delete_cb = function (text,status,xhr) {
+	$('#job_'+this.name).empty();
+	$('#jobdata_'+this.name).empty();
+	jobs[this.name] = undefined;
+    }
     
     job.run_ecb = function (xhr,status,text) {
 	this.message_display("ERR: " + xhr.status +  " " + text);
@@ -361,14 +366,25 @@ function job_new(name) {
 
     job.edit_display = function () {
 	$('#jobedit_'+this.name).empty();
-	if(job.edit) {
-	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'close.png">');
+	if(this.edit) {
+	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+
+					    baseurl+'close.png">'+
+					    '&nbsp;&nbsp;&nbsp;<img WIDTH=18 HEIGHT=22 id="jobdelete_'+this.name+'" src="'+
+					    baseurl+'trashcan.png">'
+					   );
 	    $('#jobeditmode_'+this.name).click(this, function(event) {
 		event.data.edit = 0;
 		event.data.display();
 	    });
+	    $('#jobdelete_'+this.name).click(this, function(event) {
+		event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
+				event.data,
+				event.data.delete_cb,
+				event.data.run_ecb,
+				{});
+	    });
 	} else {
-	    if(job.admin == "1") {
+	    if(this.admin == "1") {
 		$('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
 		$('#jobeditmode_'+this.name).click(this, function(event) {
 		    event.data.edit = 1;

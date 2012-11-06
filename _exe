@@ -7,6 +7,8 @@ $root=$_SERVER["KPHOME"];
 $KPSECRETS=$_SERVER["KPSECRETS"];
 $admin = FALSE;
 
+$virtualattrs = array("delete", "update", "admin");
+
 date_default_timezone_set(ini_get('date.timezone'));
 
 $sesid = $_COOKIE['session'];
@@ -67,12 +69,10 @@ if(!file_exists($root."/exe/".$job)) {
   header("HTTP/1.1 404 job does not exist");
   exit(0);
 }
-if($attr != "update") {
-  if($attr != "admin") {
-    if(!file_exists($root."/exe/".$job."/".$attr)) {
-      header("HTTP/1.1 404 attribute does not exist");
-      exit(0);
-    }
+if(!in_array($attr, $virtualattrs)) {
+  if(!file_exists($root."/exe/".$job."/".$attr)) {
+    header("HTTP/1.1 404 attribute does not exist");
+    exit(0);
   }
 }
 
@@ -163,7 +163,12 @@ function deldir($dst) {
     while (($file = readdir($dh)) !== false) {
       if($file == ".") continue;
       if($file == "..") continue;
-      unlink($dst."/".$file);
+      if(is_dir($dst."/".$file)) {
+	if(!rmdir($dst."/".$file))
+	  deldir($dst."/".$file);
+      } else {
+	unlink($dst."/".$file);
+      }
     }
     closedir($dh);
     rmdir($dst);
@@ -294,9 +299,22 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   # keep session alive
   if(file_exists($root."/tmp/KP-".$sesid))
     touch($root."/tmp/KP-".$sesid);
+  
+  # Delete job
+  if($attr == 'delete') {
+     if($admin != TRUE) {
+       header("HTTP/1.1 403 Forbidden: not creator or admin");
+       print "not creator or admin";
+       file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
+       exit(0);
+     }
+     kp_log( $root, "User $name deletes $job");
+     deldir($root."/exe/".$job);
+     deldir($root."/secrets/".$KPSECRETS."/".$job);
+     exit(0);
+  }
 
   # Update job
-  # <job>/creator must be user
   if($attr == 'update') {
      if($admin != TRUE) {
       header("HTTP/1.1 403 Forbidden: not creator or admin");
