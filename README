@@ -44,6 +44,28 @@ Populate $KPHOME/auth with files corresponding to roles.
 Each file (rolefile) should contain a newline delimited list of usernames.
 Users with their username in a rolefile will have access to all jobs with this role in its 'roles' file.
 
+Directories
+-----------
+
+Under KPHOME you should create a number of directories:
+
+auth
+
+etc  [optional]
+   etc/admin -- If you want users to be able to create jobs from the webinterface, this file must contain
+                the roles that will be able to create jobs.
+
+exe
+
+log
+
+run
+
+secrets  [optional]
+
+tmp
+
+
 Anatomy of a job
 ----------------
 

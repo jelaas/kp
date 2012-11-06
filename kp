@@ -103,7 +103,7 @@ if(!file_exists($root."/secrets")) {
   exit(0);
 }
 
-# Check that secrets are not readable by kp.
+# Check that secrets directory is not readable by kp user.
 ## FIXME
 
 #
@@ -199,6 +199,45 @@ if (isset($_REQUEST['ticket'])) {
   exit(0);
 }
 
+$createjob="0";
+if(file_exists($root."/etc/admin")) {
+  $roles = array();
+  
+  /* Fetch user roles */
+  $dir = $root."/auth";
+  if($dh = opendir($dir)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      $fn = $dir."/".$file;
+      $users=file_get_contents($fn);
+      $u = explode("\n", $users);
+      foreach ($u as $key => $user) {
+	if($user == $name) {
+	  array_push($roles, $file);
+	  break;
+	}
+      }
+    }
+    closedir($dh);
+  } else {
+    header("HTTP/1.1 503 could not open $dir");
+    file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
+    exit(0);
+  }
+  $fn = $root."/etc/admin";
+  if(file_exists($fn)) {
+    $adminroles = file_get_contents($fn);
+    $u = explode("\n", $adminroles);
+    foreach ($u as $key => $role) {
+      if(in_array($role,$roles)) {
+	$createjob="1";
+	break;
+      }
+    }
+  }
+}
+
 $RURI=$_SERVER['REQUEST_URI'];
 $a = explode("?", $_SERVER['REQUEST_URI']);
 $baseurl = substr($a[0], 0, strlen($a[0])-strlen($_SERVER["PATH_INFO"]));
@@ -225,7 +264,7 @@ $baseurl = implode("/", $b);
     </style>
  </head>
  <body>
-<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
+<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>" createjob="<?=$createjob?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td id="createjob"></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
 <hr/>
 <tt id="tags"></tt>
 <hr/>

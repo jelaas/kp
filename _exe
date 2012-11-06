@@ -65,10 +65,6 @@ if($attr == "logs") {
   exit(0);
 }
 
-if(!file_exists($root."/exe/".$job)) {
-  header("HTTP/1.1 404 job does not exist");
-  exit(0);
-}
 if(!in_array($attr, $virtualattrs)) {
   if(!file_exists($root."/exe/".$job."/".$attr)) {
     header("HTTP/1.1 404 attribute does not exist");
@@ -220,6 +216,19 @@ if(file_exists($fn)) {
   }
 }
 
+$createjob = FALSE;
+$fn = $root."/etc/admin";
+if(file_exists($fn)) {
+  $createroles = file_get_contents($fn);
+  $u = explode("\n", $createroles);
+  foreach ($u as $key => $role) {
+    if(in_array($role,$roles)) {
+      $createjob=TRUE;
+      break;
+    }
+  }
+}
+
 $fn = $root."/exe/".$job."/adminroles";
 if(file_exists($fn)) {
   $adminroles = file_get_contents($fn);
@@ -243,15 +252,20 @@ if(file_exists($root."/exe/".$job."/creator")) {
 
 $fn = $root."/exe/".$job."/".$attr;
 
-if($attr == 'description') printattr($fn);
-if($attr == 'name') printattr($fn);
-if($attr == 'param1') printattr($fn);
-if($attr == 'param2') printattr($fn);
-if($attr == 'param3') printattr($fn);
-if($attr == 'roles') printattr($fn);
-if($attr == 'tags') printattr($fn);
-if($attr == 'autodesc') { print "true"; exit(0); }
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
+  if(!file_exists($root."/exe/".$job)) {
+    header("HTTP/1.1 404 job does not exist");
+    exit(0);
+  }
+  
+  if($attr == 'description') printattr($fn);
+  if($attr == 'name') printattr($fn);
+  if($attr == 'param1') printattr($fn);
+  if($attr == 'param2') printattr($fn);
+  if($attr == 'param3') printattr($fn);
+  if($attr == 'roles') printattr($fn);
+  if($attr == 'tags') printattr($fn);
+  if($attr == 'autodesc') { print "true"; exit(0); }
   if($attr == 'run') {
     if($admin == TRUE) {
       printattr($fn);
@@ -268,15 +282,8 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
     exit(0);
   }
 }
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-  if(!$permitted) {
-    header("HTTP/1.1 403 Forbidden: roles");
-    file_put_contents( $root."/log/kp.log", "User $name execute: $job Forbidden: roles\n", FILE_APPEND);
-    print_r($roles);
-    exit(0);
-  }
-  
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
   # Clear out old sessions
   $dir = $root."/tmp";
   $old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;
@@ -302,20 +309,44 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   
   # Delete job
   if($attr == 'delete') {
-     if($admin != TRUE) {
-       header("HTTP/1.1 403 Forbidden: not creator or admin");
-       print "not creator or admin";
-       file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
-       exit(0);
-     }
-     kp_log( $root, "User $name deletes $job");
-     deldir($root."/exe/".$job);
-     deldir($root."/secrets/".$KPSECRETS."/".$job);
-     exit(0);
+    if(!file_exists($root."/exe/".$job)) {
+      header("HTTP/1.1 404 job does not exist");
+      exit(0);
+    }
+    if($admin != TRUE) {
+      header("HTTP/1.1 403 Forbidden: not creator or admin");
+      print "not creator or admin";
+      file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
+      exit(0);
+    }
+    kp_log( $root, "User $name deletes $job");
+    deldir($root."/exe/".$job);
+    deldir($root."/secrets/".$KPSECRETS."/".$job);
+    exit(0);
   }
 
   # Update job
   if($attr == 'update') {
+    if(isset($_REQUEST['create'])) {
+      if(!$createjob) {
+	header("HTTP/1.1 403 Forbidden: $name not allowed to create jobs");
+	kp_log($root, "$name not allowed to create jobs");
+	exit(0);
+      }
+      if(file_exists($root."/exe/".$job)) {
+	header("HTTP/1.1 404 job already exist");
+	kp_log($root, "job $job already exist");
+	exit(0);
+      }
+      if(mkdir($root."/exe/".$job)===FALSE) {
+	header("HTTP/1.1 404 failed to create job directory");
+	kp_log($root, "failed to create job directory: ".$root."/exe/".$job);
+	exit(0);
+      }
+      kp_log($root, "$name created job $job");
+      $admin = TRUE;
+      file_put_contents($root."/exe/".$job."/creator", $name);
+    }
      if($admin != TRUE) {
       header("HTTP/1.1 403 Forbidden: not creator or admin");
       print "not creator or admin";
@@ -406,6 +437,16 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   # Execute job
   if($attr == 'run') {
+    if(!file_exists($root."/exe/".$job)) {
+      header("HTTP/1.1 404 job does not exist");
+      exit(0);
+    }
+    if(!$permitted) {
+      header("HTTP/1.1 403 Forbidden: roles");
+      file_put_contents( $root."/log/kp.log", "User $name execute: $job Forbidden: roles\n", FILE_APPEND);
+      print_r($roles);
+      exit(0);
+    }
     $validator = getvalidator($root, $job, 'param1');
     if($validator) {
       if(validate_param('param1', $validator)) {

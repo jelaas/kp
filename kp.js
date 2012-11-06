@@ -4,10 +4,11 @@
  * Copyright: Jens Låås, UU 2012
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
-var baseurl;
+var baseurl, username;
 var glob_logid = 0;
-var jobs = [ ];
+var jobs = { };
 var logs = [ ];
+var roles = [ ];
 
 function ajax(url, context, callback) {
     $.ajax({
@@ -167,11 +168,12 @@ function job_new(name) {
     if(jobs[name])
 	return undefined;
     
-    jobs[job.name] = job;
+    jobs[name] = job;
     
     job.edit = 0;
     job.name = name;
     job.nicename = name;
+    job.justcreated = 0;
     job.adminroles = '';
     job.admin = "0";
     job.ajax = function (url, context, callback) {
@@ -308,6 +310,7 @@ function job_new(name) {
     job.update_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
 	this.edit = 0;
+	this.justcreated = 0;
 	this.display();
 	this.read();
     }
@@ -340,6 +343,8 @@ function job_new(name) {
 		params['roles'] = event.data.roles_value();
 		params['adminroles'] = event.data.adminroles_value();
 		params['run'] = event.data.run_value();
+		if(event.data.justcreated == 1)
+		    params['create'] = 'yes';
 		event.data.post(baseurl + "_exe/" + event.data.name + "/update",
 				event.data,
 				event.data.update_cb,
@@ -555,6 +560,7 @@ function gotlist(text) {
 function gotroles(text) {
     $("#roles").empty();
     $("#roles").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'key.png">' + text);
+    roles = text.split('\n');
 }
 
 function gottags(text) {
@@ -572,6 +578,7 @@ $(function () {
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
+    createjob = $("#user").attr("createjob");
     $.get(baseurl + "_view" + pathinfo,
 	  function(text, status, xhr) { gotlist(text); },
 	  "text");
@@ -581,4 +588,21 @@ $(function () {
     $.get(baseurl + "_tags",
 	  function(text, status, xhr) { gottags(text); },
 	  "text");
+    if(createjob == "1") {
+	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'/blueplus.png" id="createbutton">');
+	$('#createbutton').click(this, function(event) {
+	    i=1;
+	    while(jobs[username+'-'+i] !== undefined)
+		i=i+1;
+	    job=job_new(username+'-'+i);
+	    job.edit = 1;
+	    job.justcreated = 1;
+	    job.description = 'What this job does';
+	    job.roles = roles.join('\n');
+	    job.adminroles = roles[0];
+	    job.run = '';
+	    job.tags = '';
+	    job.display();
+	});
+    }
 });
