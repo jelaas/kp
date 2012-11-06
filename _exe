@@ -5,6 +5,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
 $KPSECRETS=$_SERVER["KPSECRETS"];
+$admin = FALSE;
 
 date_default_timezone_set(ini_get('date.timezone'));
 
@@ -67,13 +68,13 @@ if(!file_exists($root."/exe/".$job)) {
   exit(0);
 }
 if($attr != "update") {
-  if(!file_exists($root."/exe/".$job."/".$attr)) {
-    header("HTTP/1.1 404 attribute does not exist");
-    exit(0);
+  if($attr != "admin") {
+    if(!file_exists($root."/exe/".$job."/".$attr)) {
+      header("HTTP/1.1 404 attribute does not exist");
+      exit(0);
+    }
   }
 }
-
-$fn = $root."/exe/".$job."/".$attr;
 
 function printattr($fn) {
   $out = file_get_contents($fn);
@@ -158,7 +159,6 @@ function kp_log($root, $message) {
  */
 function deldir($dst) {
   if(!file_exists($dst)) return 0;
-  
   if($dh = opendir($dst)) {
     while (($file = readdir($dh)) !== false) {
       if($file == ".") continue;
@@ -170,6 +170,74 @@ function deldir($dst) {
   }
 }
 
+$roles = array();
+
+/* Fetch user roles */
+$dir = $root."/auth";
+if($dh = opendir($dir)) {
+  while (($file = readdir($dh)) !== false) {
+    if($file == ".") continue;
+    if($file == "..") continue;
+    $fn = $dir."/".$file;
+    $users=file_get_contents($fn);
+    $u = explode("\n", $users);
+    foreach ($u as $key => $user) {
+      if($user == $name) {
+	array_push($roles, $file);
+	break;
+      }
+    }
+  }
+  closedir($dh);
+} else {
+  header("HTTP/1.1 503 could not open $dir");
+  file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
+  exit(0);
+}
+
+if(!count($roles)) {
+  header("HTTP/1.1 403 Forbidden: no roles for $name");
+  file_put_contents( $root."/log/kp.log", "Forbidden: no roles for $name\n", FILE_APPEND);
+  exit(0);
+}
+
+# Check authorization
+$fn = $root."/exe/".$job."/roles";
+$permitted=0;
+if(file_exists($fn)) {
+  $jobroles=file_get_contents($fn);
+  $u = explode("\n", $jobroles);
+  foreach ($u as $key => $role) {
+    if(in_array($role,$roles)) {
+      $permitted=1;
+      break;
+    }
+  }
+}
+
+$fn = $root."/exe/".$job."/adminroles";
+if(file_exists($fn)) {
+  $adminroles = file_get_contents($fn);
+  $u = explode("\n", $adminroles);
+  foreach ($u as $key => $role) {
+    if(in_array($role,$roles)) {
+      $admin = TRUE;
+      $permitted=1;
+      break;
+    }
+  }
+}
+
+if(file_exists($root."/exe/".$job."/creator")) {
+  $creator = rtrim(file_get_contents($root."/exe/".$job."/creator"));
+  if($creator == $name) {
+    $admin = TRUE;
+    $permitted=1;
+  }
+}
+
+$fn = $root."/exe/".$job."/".$attr;
+
 if($attr == 'description') printattr($fn);
 if($attr == 'name') printattr($fn);
 if($attr == 'param1') printattr($fn);
@@ -180,63 +248,23 @@ if($attr == 'tags') printattr($fn);
 if($attr == 'autodesc') { print "true"; exit(0); }
 if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'run') {
-    if(!file_exists($root."/exe/".$job."/creator")) {
-      print "true1"; exit(0);
-    }
-    $creator = rtrim(file_get_contents($root."/exe/".$job."/creator"));
-    if($creator != $name) {
-      print "true"; exit(0);
-    } else {
+    if($admin == TRUE) {
       printattr($fn);
+    } else {
+      print "true"; exit(0);
     }
+  }
+  if($attr == 'admin') {
+    if($admin == TRUE) {
+      print "1";
+    } else {
+      print "0";
+    }
+    exit(0);
   }
 }
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $roles = array();
 
-  /* Fetch user roles */
-  $dir = $root."/auth";
-  if($dh = opendir($dir)) {
-    while (($file = readdir($dh)) !== false) {
-      if($file == ".") continue;
-      if($file == "..") continue;
-      $fn = $dir."/".$file;
-      $users=file_get_contents($fn);
-      $u = explode("\n", $users);
-      foreach ($u as $key => $user) {
-	if($user == $name) {
-	  array_push($roles, $file);
-	  break;
-	}
-      }
-    }
-    closedir($dh);
-  } else {
-    header("HTTP/1.1 503 could not open $dir");
-    file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
-    exit(0);
-  }
-
-  if(!count($roles)) {
-    header("HTTP/1.1 403 Forbidden: no roles for $name");
-    file_put_contents( $root."/log/kp.log", "Forbidden: no roles for $name\n", FILE_APPEND);
-    exit(0);
-  }
-  
-  # Check authorization
-  $fn = $root."/exe/".$job."/roles";
-  $permitted=0;
-  if(file_exists($fn)) {
-    $jobroles=file_get_contents($fn);
-    $u = explode("\n", $jobroles);
-    foreach ($u as $key => $role) {
-      if(in_array($role,$roles)) {
-	$permitted=1;
-	break;
-      }
-    }
-  }
-  
   if(!$permitted) {
     header("HTTP/1.1 403 Forbidden: roles");
     file_put_contents( $root."/log/kp.log", "User $name execute: $job Forbidden: roles\n", FILE_APPEND);
@@ -270,17 +298,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
   # Update job
   # <job>/creator must be user
   if($attr == 'update') {
-    if(!file_exists($root."/exe/".$job."/creator")) {
-	header("HTTP/1.1 403 Forbidden: no creator");
-	file_put_contents( $root."/log/kp.log", "$name: no creator known for job $job\n", FILE_APPEND);
-	exit(0);
-    }
-    $creator = rtrim(file_get_contents($root."/exe/".$job."/creator"));
-    if($creator != $name) {
-	header("HTTP/1.1 403 Forbidden: not creator");
-	print "not creator $creator";
-	file_put_contents( $root."/log/kp.log", "$name not creator $creator of job $job\n", FILE_APPEND);
-	exit(0);
+     if($admin != TRUE) {
+      header("HTTP/1.1 403 Forbidden: not creator or admin");
+      print "not creator or admin";
+      file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
+      exit(0);
     }
     kp_log( $root, "User $name updates $job");
     if(file_put_contents( $root."/exe/".$job."/description", $_REQUEST['description'])===FALSE) {

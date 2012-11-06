@@ -173,6 +173,7 @@ function job_new(name) {
     job.name = name;
     job.nicename = name;
     job.adminroles = '';
+    job.admin = "0";
     job.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
@@ -367,11 +368,13 @@ function job_new(name) {
 		event.data.display();
 	    });
 	} else {
-	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
-	    $('#jobeditmode_'+this.name).click(this, function(event) {
-		event.data.edit = 1;
-		event.data.display();
-	    });
+	    if(job.admin == "1") {
+		$('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
+		$('#jobeditmode_'+this.name).click(this, function(event) {
+		    event.data.edit = 1;
+		    event.data.display();
+		});
+	    }
 	}
     }
 
@@ -423,6 +426,10 @@ function job_new(name) {
 	    this.job.tags = text;
 	    this.job.tags_display();
 	}
+	if(this.attr == "admin") {
+	    this.job.admin = text;
+	    this.job.edit_display();
+	}
     }
     
     job.history_cb = function (text,status,xhr) {
@@ -459,6 +466,7 @@ function job_new(name) {
 	this.read_attr("roles");
 	this.read_attr("adminroles");
 	this.read_attr("tags");
+	this.read_attr("admin");
 	this.read_history();
 	this.edit_display();
     };
