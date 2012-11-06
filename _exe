@@ -264,6 +264,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'param2') printattr($fn);
   if($attr == 'param3') printattr($fn);
   if($attr == 'roles') printattr($fn);
+  if($attr == 'adminroles') printattr($fn);
   if($attr == 'tags') printattr($fn);
   if($attr == 'autodesc') { print "true"; exit(0); }
   if($attr == 'run') {
