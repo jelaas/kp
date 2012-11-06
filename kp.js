@@ -589,7 +589,7 @@ $(function () {
 	  function(text, status, xhr) { gottags(text); },
 	  "text");
     if(createjob == "1") {
-	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'/blueplus.png" id="createbutton">');
+	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'blueplus.png" id="createbutton">');
 	$('#createbutton').click(this, function(event) {
 	    i=1;
 	    while(jobs[username+'-'+i] !== undefined)
