@@ -28,24 +28,23 @@ function ajax(url, context, callback) {
   Starts a polling function to fetch the log as it grows.
   Returns the created log object.
 */
-function log_new(name) {
-    var log, i;
+function Log(name) {
+    var i;
 
     if(logs[name]) {
 	return undefined;
     }
 
-    log = {};
     glob_logid += 1;
-    log.id = glob_logid;
-    log.name = name;
-    log.pos = 0;
-    log.start = 0;
-    log.end = 0;
-    log.pollstop = 0;
-    logs[ log.name ] = log;
+    this.id = glob_logid;
+    this.name = name;
+    this.pos = 0;
+    this.start = 0;
+    this.end = 0;
+    this.pollstop = 0;
+    logs[ this.name ] = this;
 
-    log.ajax = function (url, context, callback) {
+    this.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
             type: 'GET',
@@ -54,11 +53,11 @@ function log_new(name) {
 	    context: context
 	});
     };
-    log.read_attr = function (attr) {
+    this.read_attr = function (attr) {
 	this.ajax(baseurl + "_log/" + this.name + "/" + attr, { log: this, attr: attr }, this.attr_cb);
     };
     
-    log.time_display = function () {
+    this.time_display = function () {
 	$('#logtime_'+this.id).empty();
 	if(this.end >= this.start) {
 	    $('#logtime_'+this.id).append(" Runtime: " + (this.end-this.start)+'s');
@@ -67,7 +66,7 @@ function log_new(name) {
 	}
     };
     
-    log.status_display = function () {
+    this.status_display = function () {
 	$('#logstatus_'+this.id).empty();
 	$('#logstatus_'+this.id).append(" Status: " + this.status);
 	if(this.status == "0")
@@ -76,7 +75,7 @@ function log_new(name) {
 	    $('#logstatus_'+this.id).css("background-color","#f88");
     };
     
-    log.attr_cb = function (text,status,xhr) {
+    this.attr_cb = function (text,status,xhr) {
 	if(this.attr == "start") {
 	    this.log.start = text;
 	    this.log.time_display();
@@ -96,14 +95,14 @@ function log_new(name) {
 	}
     }
 
-    log.read = function () {
+    this.read = function () {
 	this.framework_create();
 	this.read_attr("start");
 	this.read_attr("end");
 	this.read_attr("status");
     }
 
-    log.framework_create = function () {
+    this.framework_create = function () {
 	if ($('#log_'+this.id).length == 0) {
 	    $('#logs').prepend('<table border=0 class="logtable" id="log_' + this.id +
 			       '"><tr><td COLSPAN=3 >' +
@@ -128,30 +127,32 @@ function log_new(name) {
 	}
     }
     
-    log.poll_cb = function (text,status,xhr) {
+    this.poll_cb = function (text,status,xhr) {
 	$('#logdata_'+this.id).append(text);
 	this.pos += text.length;
 	$('#logdata_'+this.id)[0].scrollTop=$('#logdata_'+this.id)[0].scrollHeight;
     }
     
-    log.poll = function() {
-	log.read();
+    this.poll = function() {
+	this.read();
 	this.ajax(baseurl + "_log/" + this.name + "?start="+this.pos, this, this.poll_cb);
     }
 
-    log.remove = function() {
+    this.remove = function() {
 	if(this.timer != undefined) clearInterval(this.timer);
 	$('#log_'+this.id).empty();
 	logs[this.name] = undefined;
     }
 
-    log.poll();
+    this.poll();
 
-    log.timer = setInterval(function(){
+    /* use variable, since setInterval's this is the global context */
+    var log = this;
+    this.timer = setInterval(function(){
 	log.poll();
     }, 2000);
     
-    return log;
+    return this;
 }
 
 /*
@@ -161,22 +162,19 @@ function log_new(name) {
   Starts a polling function to update the log history.
   Returns the created job object.
 */
-function job_new(name) {
-    var job;
-    job = {};
-    
+function Job(name) {
     if(jobs[name])
 	return undefined;
     
-    jobs[name] = job;
+    jobs[name] = this;
     
-    job.edit = 0;
-    job.name = name;
-    job.nicename = name;
-    job.justcreated = 0;
-    job.adminroles = '';
-    job.admin = "0";
-    job.ajax = function (url, context, callback) {
+    this.edit = 0;
+    this.name = name;
+    this.nicename = name;
+    this.justcreated = 0;
+    this.adminroles = '';
+    this.admin = "0";
+    this.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
             type: 'GET',
@@ -185,7 +183,7 @@ function job_new(name) {
 	    context: context
 	});
     };
-    job.post = function (url, context, callback, errorcb, data) {
+    this.post = function (url, context, callback, errorcb, data) {
 	$.ajax({
             url: url,
             type: 'POST',
@@ -196,7 +194,7 @@ function job_new(name) {
 	    context: context
 	});
     };
-    job.nicename_display = function () {
+    this.nicename_display = function () {
 	$('#jobname_'+this.name).empty();
 	if(this.edit) {
 	    $('#jobname_'+this.name).append('<input type="text" value="'+this.nicename+'">');
@@ -207,7 +205,7 @@ function job_new(name) {
 	}
 	$('#jobname_'+this.name).append(this.nicename);
     }
-    job.roles_display = function () {
+    this.roles_display = function () {
 	$('#roles_'+this.name).empty();
 	if(this.edit) {
 	    $('#roles_'+this.name).append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
@@ -216,7 +214,7 @@ function job_new(name) {
 	    }
 	}
     }
-    job.adminroles_display = function () {
+    this.adminroles_display = function () {
 	$('#adminroles_'+this.name).empty();
 	if(this.edit) {
 	    $('#adminroles_'+this.name).append('Admin roles:<br><textarea  cols=10 rows=5>'+this.adminroles+'</textarea>');
@@ -225,7 +223,7 @@ function job_new(name) {
 	    }
 	}
     }
-    job.tags_display = function () {
+    this.tags_display = function () {
 	$('#tags_'+this.name).empty();
 	if(this.edit) {
 	    $('#tags_'+this.name).append('Tags:<br><textarea  cols=10 rows=5>'+this.tags+'</textarea>');
@@ -234,7 +232,7 @@ function job_new(name) {
 	    }
 	}
     }
-    job.description_display = function () {
+    this.description_display = function () {
 	$('#description_'+this.name).empty();
 	if(this.edit) {
 	    $('#description_'+this.name).append('Description:<br><textarea  cols=60 rows=15>'+this.description+'</textarea>');
@@ -245,7 +243,7 @@ function job_new(name) {
 	    $('#description_'+this.name).append(this.description);
 	}
     }
-    job.param_display = function (name, elem, param) {
+    this.param_display = function (name, elem, param) {
 	if(this.edit) {
 	    var val = "";
 	    if(this[name]!==undefined)
@@ -286,46 +284,46 @@ function job_new(name) {
 	    }
 	}
     }
-    job.param1_display = function () {
+    this.param1_display = function () {
 	$('#param1_'+this.name).empty();
 	this.param_display("param1", $('#param1_'+this.name), this.param1);
     }
-    job.param2_display = function () {
+    this.param2_display = function () {
 	$('#param2_'+this.name).empty();
 	this.param_display("param2", $('#param2_'+this.name), this.param2);
     }
-    job.param3_display = function () {
+    this.param3_display = function () {
 	$('#param3_'+this.name).empty();
 	this.param_display("param3", $('#param3_'+this.name), this.param3);
     }
-    job.message_display = function (msg) {
+    this.message_display = function (msg) {
 	$('#msg_'+this.name).empty();
 	$('#msg_'+this.name).append('<b>'+msg+'</b>');
     }
 
-    job.run_cb = function (text,status,xhr) {
+    this.run_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
-	if(text.length > 8) log_new(text);
+	if(text.length > 8) Log(text);
     }
-    job.update_cb = function (text,status,xhr) {
+    this.update_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
 	this.edit = 0;
 	this.justcreated = 0;
 	this.display();
 	this.read();
     }
-    job.delete_cb = function (text,status,xhr) {
+    this.delete_cb = function (text,status,xhr) {
 	$('#job_'+this.name).remove();
 	$('#jobdata_'+this.name).remove();
 	jobs[this.name] = undefined;
 	if(this.timer != undefined) clearInterval(this.timer);
     }
     
-    job.run_ecb = function (xhr,status,text) {
+    this.run_ecb = function (xhr,status,text) {
 	this.message_display("ERR: " + xhr.status +  " " + text);
     }
     
-    job.run_display = function () {
+    this.run_display = function () {
 	$('#run_'+this.name).empty();
 	if(this.edit) {
 	    $('#run_'+this.name).append('Script<br><textarea  cols=60 rows=15>'+this.run+'</textarea>');
@@ -370,7 +368,7 @@ function job_new(name) {
 	}
     }
 
-    job.edit_display = function () {
+    this.edit_display = function () {
 	$('#jobedit_'+this.name).empty();
 	if(this.edit) {
 	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+
@@ -404,18 +402,18 @@ function job_new(name) {
 	}
     }
 
-    job.history_display = function () {
+    this.history_display = function () {
 	var i;
 	$('#history_'+this.name).empty();
 	for(i=0;i<this.logs.length;i++) {
 	    $('#history_'+this.name).append('<tt id="hist_'+this.name+'_'+i+'">'+this.logs[i]+"<br></tt>");
 	    $('#hist_'+this.name+'_'+i).click(this.logs[i], function(event) {
-		log_new(event.data);
+		Log(event.data);
 	    });
 	}
     }
 
-    job.attr_cb = function (text,status,xhr) {
+    this.attr_cb = function (text,status,xhr) {
 	if(this.attr == "description") {
 	    this.job.description = text;
 	    this.job.description_display();
@@ -458,18 +456,18 @@ function job_new(name) {
 	}
     }
     
-    job.history_cb = function (text,status,xhr) {
+    this.history_cb = function (text,status,xhr) {
 	this.logs = text.split('\n').filter(function (e) {if(e.length >0) return true;return false;});
 	this.history_display();
     }
 
-    job.read_attr = function (attr) {
+    this.read_attr = function (attr) {
 	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr }, this.attr_cb);
     };
-    job.read_history = function () {
+    this.read_history = function () {
 	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
-    job.display = function () {
+    this.display = function () {
 	this.nicename_display();
 	this.param1_display();
 	this.param2_display();
@@ -481,7 +479,7 @@ function job_new(name) {
 	this.tags_display();
 	this.description_display();
     }
-    job.read = function () {
+    this.read = function () {
 	this.framework_create();
 	this.read_attr("description");
 	this.read_attr("name");
@@ -497,7 +495,7 @@ function job_new(name) {
 	this.edit_display();
     };
     
-    job.framework_create = function () {
+    this.framework_create = function () {
 	if ($('#job_'+this.name).length == 0) {
 	    $('#items').append('<tr class="jobrow" id="job_' +
 			       this.name +
@@ -541,16 +539,18 @@ function job_new(name) {
     }
 
 
-    job.poll = function() {
+    this.poll = function() {
 	this.read_history();
     };
 
-    job.timer = setInterval(function(){
+    /* use variable, since setInterval's this is the global context */
+    var job = this;
+    this.timer = setInterval(function(){
 	job.poll();
     }, 5000);
 
-    job.read();
-    return job;
+    this.read();
+    return this;
 }
 
 function gotlist(text) {
@@ -558,7 +558,7 @@ function gotlist(text) {
     
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
-	job_new(arr[i]);
+	new Job(arr[i]);
     }
 }
 
@@ -599,7 +599,7 @@ $(function () {
 	    var i=1;
 	    while(jobs[username+'-'+i] !== undefined)
 		i=i+1;
-	    job=job_new(username+'-'+i);
+	    job=new Job(username+'-'+i);
 	    job.edit = 1;
 	    job.justcreated = 1;
 	    job.description = 'What this job does';
