@@ -192,13 +192,13 @@ if($dh = opendir($dir)) {
   closedir($dh);
 } else {
   header("HTTP/1.1 503 could not open $dir");
-  file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
+  kp_log( $root, "503 could not open $dir\n");
   exit(0);
 }
 
 if(!count($roles)) {
   header("HTTP/1.1 403 Forbidden: no roles for $name");
-  file_put_contents( $root."/log/kp.log", "Forbidden: no roles for $name\n", FILE_APPEND);
+  kp_log( $root, "Forbidden: no roles for $name\n");
   exit(0);
 }
 
@@ -317,7 +317,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($admin != TRUE) {
       header("HTTP/1.1 403 Forbidden: not creator or admin");
       print "not creator or admin";
-      file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
+      kp_log( $root, "$name not creator or admin of job $job\n");
       exit(0);
     }
     kp_log( $root, "User $name deletes $job");
@@ -351,7 +351,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
      if($admin != TRUE) {
       header("HTTP/1.1 403 Forbidden: not creator or admin");
       print "not creator or admin";
-      file_put_contents( $root."/log/kp.log", "$name not creator or admin of job $job\n", FILE_APPEND);
+      kp_log( $root, "$name not creator or admin of job $job\n");
       exit(0);
     }
     kp_log( $root, "User $name updates $job");
@@ -444,7 +444,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     if(!$permitted) {
       header("HTTP/1.1 403 Forbidden: roles");
-      file_put_contents( $root."/log/kp.log", "User $name execute: $job Forbidden: roles\n", FILE_APPEND);
+      kp_log( $root, "User $name execute: $job Forbidden: roles\n");
       print_r($roles);
       exit(0);
     }
@@ -453,7 +453,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       if(validate_param('param1', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param1 validator: $validator");
 	print "invalid input: '".$_REQUEST['param1']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $job param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n", FILE_APPEND);
+	kp_log( $root, "User $name execute: $job param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n");
 	exit(0);
       }
       putenv("PARAM1=".$_REQUEST['param1']);
@@ -463,7 +463,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       if(validate_param('param2', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param2 validator: $validator");
 	print "invalid input: '".$_REQUEST['param2']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $job param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n", FILE_APPEND);
+	kp_log( $root, "User $name execute: $job param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n");
 	exit(0);
       }
       putenv("PARAM2=".$_REQUEST['param2']);
@@ -473,7 +473,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       if(validate_param('param3', $validator)) {
 	header("HTTP/1.1 403 Forbidden: invalid input: param3 validator: $validator");
 	print "invalid input: '".$_REQUEST['param3']."' validator: $validator";
-	file_put_contents( $root."/log/kp.log", "User $name execute: $job param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n", FILE_APPEND);
+	kp_log( $root, "User $name execute: $job param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n");
 	exit(0);
       }
       putenv("PARAM3=".$_REQUEST['param3']);
@@ -483,10 +483,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (! function_exists('pcntl_fork')) {
       header("HTTP/1.1 503 PCNTL functions not available on this PHP installation. KP wont work");
       print('PCNTL functions not available on this PHP installation. KP wont work!');
-      file_put_contents( $root."/log/kp.log", "PCNTL functions not available on this PHP installation. KP wont work!\n", FILE_APPEND);
+      kp_log( $root, "PCNTL functions not available on this PHP installation. KP wont work!\n");
       exit(0);
     }
-    file_put_contents( $root."/log/kp.log", "User $name executes: $job log: $d\n", FILE_APPEND);
+    kp_log( $root, "User $name executes: $job log: $d\n");
     $pid = pcntl_fork();
     if($pid == 0) {
       posix_setsid();
