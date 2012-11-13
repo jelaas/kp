@@ -104,7 +104,14 @@ if(!file_exists($root."/secrets")) {
 }
 
 # Check that secrets directory is not readable by kp user.
-## FIXME
+$dir = $root."/secrets";
+if($dh = opendir($dir)) {
+  closedir($dh);
+  header("HTTP/1.1 500 Configuration error. $root/secrets readable");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/secrets readable";
+  exit(0);
+}
 
 #
 # Redirect if no PATH_INFO. This makes links work better.
