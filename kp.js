@@ -156,7 +156,67 @@ function Log(name) {
 }
 
 /*
-  job object constructor.
+  Param object constructor
+  
+*/
+function Param(containerid, n, definition) {
+    this.container = containerid;
+    this.def = definition;
+    this.n = n;
+    this.id = '#'+this.container+" tr td[id='"+this.n+"']";
+    this.edit = 0;
+    
+    this.display = function () {
+	$(this.id).empty();
+	
+	if(this.edit) {
+	    $(this.id).append('Parameter '+this.n + '<br><textarea  cols=20 rows=5>'+this.def+'</textarea>');
+	    this.value = function () {
+		return $(this.id+' textarea').val();
+	    }
+	} else {
+	    var arr = this.def.split(':');
+	    $(this.id).append("<b>" + arr[0] + ":</b> ");
+	    arr = this.def.substring(this.def.indexOf(":")).split('\n');
+	    arr = arr[0].split(' ');
+	    arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
+	    arr.shift();
+	    if(arr[0] == "text") {
+		$(this.id).append('<input type="text" maxlength="8" size="8">');
+		this.value = function () {
+		    return $(this.id + ' input').val();
+		}
+	    }
+	    if(arr[0] == "select") {
+		var options = "";
+		var maxlen = arr[2];
+		for(i=3;i<arr.length;i++) {
+		    var opttext;
+		    if(arr[i].length > maxlen)
+			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
+		    else
+			opttext = arr[i];
+		    options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
+		}
+		$(this.id).append('<select>'+options+'</select>');
+		this.value = function () {
+		    return $(this.id +' select').val();
+		}
+	    }
+	}
+    }
+
+    this.framework_create = function () {
+	if($(this.id).length == 0) {
+	    $('#'+this.container).append('<tr><td class="param" id="'+this.n+'">AAAA'+this.n+'</td></tr>');
+	}
+    }
+    
+    return this;
+}
+
+/*
+  Job object constructor.
   Starts ajax calls to fill in job information.
   The callbacks from the ajax calls will record and display job properties.
   Starts a polling function to update the log history.
@@ -174,6 +234,7 @@ function Job(name) {
     this.justcreated = 0;
     this.adminroles = '';
     this.admin = "0";
+    this.params = [];
     this.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
@@ -183,6 +244,13 @@ function Job(name) {
 	    context: context
 	});
     };
+    this.editmode = function (mode) {
+	this.edit = mode;
+	for(i=0;i<this.params.length;i++) {
+	    this.params[i].edit = mode;
+	}
+    }
+
     this.post = function (url, context, callback, errorcb, data) {
 	$.ajax({
             url: url,
@@ -243,58 +311,29 @@ function Job(name) {
 	    $('#description_'+this.name).append(this.description);
 	}
     }
-    this.param_display = function (name, elem, param) {
+    this.param_add = function () {
+	param = new Param("params_"+this.name, this.params.length+1, "Caption:");
+	if(this.edit) param.edit = 1;
+	this.params.push(param);
+	param.framework_create();
+	param.display();
+    }
+    
+    this.params_display = function () {
+	var i;
+	for(i=0;i<this.params.length;i++) {
+	    this.params[i].display();
+	}
 	if(this.edit) {
-	    var val = "";
-	    if(this[name]!==undefined)
-		val = this[name];
-	    elem.append(name + '<br><textarea  cols=20 rows=5>'+val+'</textarea>');
-	    this[name+'_value'] = function () {
-		return $('#'+name+'_'+this.name+' textarea').val();
+	    if($('#paramadd_'+this.name).length == 0) {
+		$("#params_"+this.name).append('<button type="button" id="paramadd_'+this.name+'">Add parameter</button>');
+		$('#paramadd_'+this.name).click(this, function(event) {
+		    event.data.param_add();
+		});
 	    }
 	} else {
-	    if(param === undefined) return;
-	    var arr = param.split(':');
-	    elem.append("<b>" + arr[0] + ":</b> ");
-	    arr = param.substring(param.indexOf(":")).split('\n');
-	    arr = arr[0].split(' ');
-	    arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
-	    arr.shift();
-	    if(arr[0] == "text") {
-		elem.append('<input type="text" maxlength="8" size="8">');
-		this[name+'_value'] = function () {
-		    return $('#'+name+'_'+this.name+' input').val();
-		}
-	    }
-	    if(arr[0] == "select") {
-		var options = "";
-		var maxlen = arr[2];
-		for(i=3;i<arr.length;i++) {
-		    var opttext;
-		    if(arr[i].length > maxlen)
-			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
-		    else
-			opttext = arr[i];
-		    options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
-		}
-		elem.append('<select>'+options+'</select>');
-		this[name+'_value'] = function () {
-		    return $('#'+name+'_'+this.name+' select').val();
-		}
-	    }
+	    $('#paramadd_'+this.name).remove();
 	}
-    }
-    this.param1_display = function () {
-	$('#param1_'+this.name).empty();
-	this.param_display("param1", $('#param1_'+this.name), this.param1);
-    }
-    this.param2_display = function () {
-	$('#param2_'+this.name).empty();
-	this.param_display("param2", $('#param2_'+this.name), this.param2);
-    }
-    this.param3_display = function () {
-	$('#param3_'+this.name).empty();
-	this.param_display("param3", $('#param3_'+this.name), this.param3);
     }
     this.message_display = function (msg) {
 	$('#msg_'+this.name).empty();
@@ -307,7 +346,7 @@ function Job(name) {
     }
     this.update_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
-	this.edit = 0;
+	this.editmode(0);
 	this.justcreated = 0;
 	this.display();
 	this.read();
@@ -333,10 +372,11 @@ function Job(name) {
 	    };
 	    $('#runlink_'+this.name).click(this, function(event) {
 		var params = {};
+		var i;
 		params['nicename'] = event.data.nicename_value();
-		params['param1'] = event.data.param1_value();
-		params['param2'] = event.data.param2_value();
-		params['param3'] = event.data.param3_value();
+		for(i=0;i<event.data.params.length;i++) {
+		    params['param'+event.data.params[i].n] = event.data.params[i].value();
+		}
 		params['description'] = event.data.description_value();
 		params['tags'] = event.data.tags_value();
 		params['roles'] = event.data.roles_value();
@@ -353,16 +393,17 @@ function Job(name) {
 	} else {
 	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Run</button>');
 	    $('#runlink_'+this.name).click(this, function(event) {
-		var params = {};
-		if(event.data['param1_value']) params['param1'] = event.data.param1_value();
-		if(event.data['param2_value']) params['param2'] = event.data.param2_value();
-		if(event.data['param3_value']) params['param3'] = event.data.param3_value();
+		var postparams = {};
+		var i;
+		for(i=0;i<event.data.params.length;i++) {
+		    postparams['param'+event.data.params[i].n] = event.data.params[i].value();
+		}
 		if(confirm("Run "+event.data.name+"?")) {
 		    event.data.post(baseurl + "_exe/" + event.data.name + "/run",
 				    event.data,
 				    event.data.run_cb,
 				    event.data.run_ecb,
-				    params);
+				    postparams);
 		}
 	    });
 	}
@@ -377,7 +418,7 @@ function Job(name) {
 					    baseurl+'trashcan.png">'
 					   );
 	    $('#jobeditmode_'+this.name).click(this, function(event) {
-		event.data.edit = 0;
+		event.data.editmode(0);
 		event.data.display();
 	    });
 	    $('#jobdelete_'+this.name).click(this, function(event) {
@@ -395,8 +436,9 @@ function Job(name) {
 	    if(this.admin == "1" || this.justcreated == 1) {
 		$('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
 		$('#jobeditmode_'+this.name).click(this, function(event) {
-		    event.data.edit = 1;
+		    event.data.editmode(1);
 		    event.data.display();
+		    event.data.message_display('');
 		});
 	    }
 	}
@@ -413,6 +455,24 @@ function Job(name) {
 	}
     }
 
+    this.param_cb = function (text,status,xhr) {
+	var param;
+	this.job.ajax(baseurl + "_exe/" + this.job.name + "/param" + (this.attr +1), { job: this.job, attr: (this.attr+1) }, this.job.param_cb);
+	for(i=0;i<this.job.params.length;i++) {
+	    if(this.job.params[i].n == this.attr) {
+		param = this.job.params[i];
+		param.def = text;
+		break;
+	    }
+	}
+	if(param === undefined) {
+	    param = new Param("params_"+this.job.name, this.attr, text);
+	    this.job.params.push(param);
+	    param.framework_create();
+	}
+	param.display();
+    }
+
     this.attr_cb = function (text,status,xhr) {
 	if(this.attr == "description") {
 	    this.job.description = text;
@@ -421,18 +481,6 @@ function Job(name) {
 	if(this.attr == "name") {
 	    this.job.nicename = text;
 	    this.job.nicename_display();
-	}
-	if(this.attr == "param1") {
-	    this.job.param1 = text;
-	    this.job.param1_display();
-	}
-	if(this.attr == "param2") {
-	    this.job.param2 = text;
-	    this.job.param2_display();
-	}
-	if(this.attr == "param3") {
-	    this.job.param3 = text;
-	    this.job.param3_display();
 	}
 	if(this.attr == "run") {
 	    this.job.run = text;
@@ -464,14 +512,15 @@ function Job(name) {
     this.read_attr = function (attr) {
 	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr }, this.attr_cb);
     };
+    this.read_params = function (param_no) {
+	this.ajax(baseurl + "_exe/" + this.name + "/param" + param_no, { job: this, attr: param_no }, this.param_cb);
+    };
     this.read_history = function () {
 	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
     this.display = function () {
 	this.nicename_display();
-	this.param1_display();
-	this.param2_display();
-	this.param3_display();
+	this.params_display();
 	this.edit_display();
 	this.run_display();
 	this.roles_display();
@@ -483,9 +532,7 @@ function Job(name) {
 	this.framework_create();
 	this.read_attr("description");
 	this.read_attr("name");
-	this.read_attr("param1");
-	this.read_attr("param2");
-	this.read_attr("param3");
+	this.read_params(1);
 	this.read_attr("run");
 	this.read_attr("roles");
 	this.read_attr("adminroles");
@@ -512,13 +559,11 @@ function Job(name) {
 			       '<tr><td id="roles_' + this.name + '"></td></tr>' +
 			       '<tr><td id="tags_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
-			       '<td NOWRAP><table border="0">' + 
-			       '<tr><td class="param" id="param1_' + this.name + '"></td></tr>' +
-			       '<tr><td class="param" id="param2_' + this.name + '"></td></tr>' +
-			       '<tr><td class="param" id="param3_' + this.name + '"></td></tr>' +
+			       '<td valign=top NOWRAP><table border="0" id="params_'+this.name+'"></table>' + 
+			       '<table border="0">' + 
 			       '<tr><td class="message" id="msg_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
-			       '<td class="run" id="run_' + this.name + '"></td>' +
+			       '<td valign=top class="run" id="run_' + this.name + '"></td>' +
 			       '<td valign=top class="history" id="history_' + this.name + '">logg historik</td>' +
 			       '</tr>');
 	    $('#jobtoggle_'+this.name).click(this, function(event) {
