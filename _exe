@@ -399,8 +399,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $job/param1");
-      unlink( $root."/exe/".$job."/param1" );
+      if(file_exists($root."/exe/".$job."/param1")) {
+	kp_log($root, "User $name removes $job/param1");
+	unlink( $root."/exe/".$job."/param1" );
+      }
     }
     if(strlen($_REQUEST['param2']) > 1) {
       if(file_put_contents( $root."/exe/".$job."/param2", $_REQUEST['param2'])===FALSE) {
@@ -409,8 +411,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $job/param2");
-      unlink( $root."/exe/".$job."/param2" );
+      if(file_exists($root."/exe/".$job."/param2")) {
+	kp_log($root, "User $name removes $job/param2");
+	unlink( $root."/exe/".$job."/param2" );
+      }
     }
     if(strlen($_REQUEST['param3']) > 1) {
       if(file_put_contents( $root."/exe/".$job."/param3", $_REQUEST['param3'])===FALSE) {
@@ -419,8 +423,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	exit(0);
       }
     } else {
-      kp_log($root, "User $name removes $job/param3");
-      unlink( $root."/exe/".$job."/param3" );
+      if(file_exists($root."/exe/".$job."/param3")) {
+	kp_log($root, "User $name removes $job/param3");
+	unlink( $root."/exe/".$job."/param3" );
+      }
     }
     if(strlen($_REQUEST['run']) > 1) {
       if(file_put_contents( $root."/exe/".$job."/run", $_REQUEST['run'])===FALSE) {
