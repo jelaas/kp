@@ -306,7 +306,7 @@ function Job(name) {
 	    $('#description_'+this.name).append('Description:<br><textarea  cols=60 rows=15>'+this.description+'</textarea>');
 	    this.description_value = function () {
 		return $('#description_'+this.name+' textarea').val();
-	    }
+	    };
 	} else {
 	    $('#description_'+this.name).append(this.description);
 	}
@@ -342,7 +342,7 @@ function Job(name) {
 
     this.run_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
-	if(text.length > 8) Log(text);
+	if(text.length > 8) new Log(text);
     }
     this.update_cb = function (text,status,xhr) {
 	$('#msg_'+this.name).empty();
@@ -450,7 +450,7 @@ function Job(name) {
 	for(i=0;i<this.logs.length;i++) {
 	    $('#history_'+this.name).append('<tt id="hist_'+this.name+'_'+i+'">'+this.logs[i]+"<br></tt>");
 	    $('#hist_'+this.name+'_'+i).click(this.logs[i], function(event) {
-		Log(event.data);
+		new Log(event.data);
 	    });
 	}
     }
