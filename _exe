@@ -524,6 +524,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       }
       file_put_contents("$root/log/$d.end", time());
       file_put_contents("$root/log/$d.status", $status);
+      kp_log( $root, "Execution of $job complete (invoked by $name) log: $d status: $status");
       
       # Since I never managed to close stdout and stderr within PHP, we kill our process instead.
       # If we dont do this PHP will output headers from the child also..
