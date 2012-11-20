@@ -204,7 +204,7 @@ if($sesid == "invalid") {
     $pgt = $arr[2];
 
     $sesid = time() . mt_rand();
-    setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/");
+    setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/", '', FALSE, TRUE);
     if(file_put_contents( $root."/tmp/KP-".$sesid, $name) === FALSE) {
       header("HTTP/1.1 500 Failed to write to $root/tmp");
       header('Content-type: text/plain');
