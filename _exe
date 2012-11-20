@@ -260,9 +260,8 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
   
   if($attr == 'description') printattr($fn);
   if($attr == 'name') printattr($fn);
-  if($attr == 'param1') printattr($fn);
-  if($attr == 'param2') printattr($fn);
-  if($attr == 'param3') printattr($fn);
+  $attrpfx = substr($attr, 0, 5);
+  if($attrpfx == 'param') printattr($fn);
   if($attr == 'roles') printattr($fn);
   if($attr == 'adminroles') printattr($fn);
   if($attr == 'tags') printattr($fn);
@@ -392,40 +391,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       exit(0);
     }
 
-    if(strlen($_REQUEST['param1']) > 1) {
-      if(file_put_contents( $root."/exe/".$job."/param1", $_REQUEST['param1'])===FALSE) {
-	kp_log( $root, "User $name updates $job. param1 failed\n");
-	header("HTTP/1.1 500 User $name updates $job. Failed to update param1");
-	exit(0);
-      }
-    } else {
-      if(file_exists($root."/exe/".$job."/param1")) {
-	kp_log($root, "User $name removes $job/param1");
-	unlink( $root."/exe/".$job."/param1" );
-      }
-    }
-    if(strlen($_REQUEST['param2']) > 1) {
-      if(file_put_contents( $root."/exe/".$job."/param2", $_REQUEST['param2'])===FALSE) {
-	kp_log( $root, "User $name updates $job. param2 failed\n");
-	header("HTTP/1.1 500 User $name updates $job. Failed to update param2");
-	exit(0);
-      }
-    } else {
-      if(file_exists($root."/exe/".$job."/param2")) {
-	kp_log($root, "User $name removes $job/param2");
-	unlink( $root."/exe/".$job."/param2" );
-      }
-    }
-    if(strlen($_REQUEST['param3']) > 1) {
-      if(file_put_contents( $root."/exe/".$job."/param3", $_REQUEST['param3'])===FALSE) {
-	kp_log( $root, "User $name updates $job. param3 failed\n");
-	header("HTTP/1.1 500 User $name updates $job. Failed to update param3");
-	exit(0);
-      }
-    } else {
-      if(file_exists($root."/exe/".$job."/param3")) {
-	kp_log($root, "User $name removes $job/param3");
-	unlink( $root."/exe/".$job."/param3" );
+    for ($i = 1; ; $i++) {
+      if(isset($_REQUEST['param'.$i])) {
+	if(strlen($_REQUEST['param'.$i]) > 1) {
+	  if(file_put_contents( $root."/exe/".$job."/param".$i, $_REQUEST['param'.$i])===FALSE) {
+	    kp_log( $root, "User $name updates $job. param$i failed\n");
+	    header("HTTP/1.1 500 User $name updates $job. Failed to update param".$i);
+	    exit(0);
+	  }
+	} else {
+	  if(file_exists($root."/exe/".$job."/param".$i)) {
+	    kp_log($root, "User $name removes $job/param".$i);
+	    unlink( $root."/exe/".$job."/param".$i );
+	  }
+	}
+      } else {
+	if($i > 10)
+	  break;
       }
     }
     if(strlen($_REQUEST['run']) > 1) {
@@ -454,35 +436,21 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       print_r($roles);
       exit(0);
     }
-    $validator = getvalidator($root, $job, 'param1');
-    if($validator) {
-      if(validate_param('param1', $validator)) {
-	header("HTTP/1.1 403 Forbidden: invalid input: param1 validator: $validator");
-	print "invalid input: '".$_REQUEST['param1']."' validator: $validator";
-	kp_log( $root, "User $name execute: $job param1 invalid input: '".$_REQUEST['param1']."' validator: $validator\n");
-	exit(0);
+    for ($i = 1; ; $i++) {
+      if(isset($_REQUEST['param'.$i])) {
+	$validator = getvalidator($root, $job, 'param'.$i);
+	if($validator) {
+	  if(validate_param('param'.$i, $validator)) {
+	    header("HTTP/1.1 403 Forbidden: invalid input: param$i validator: $validator");
+	    print "invalid input: '".$_REQUEST['param'.$i]."' validator: $validator";
+	    kp_log( $root, "User $name execute: $job param$i invalid input: '".$_REQUEST['param'.$i]."' validator: $validator\n");
+	    exit(0);
+	  }
+	  putenv("PARAM".$i."=".$_REQUEST['param'.$i]);
+	}
+      } else {
+	if($i > 10) break;
       }
-      putenv("PARAM1=".$_REQUEST['param1']);
-    }
-    $validator = getvalidator($root, $job, 'param2');
-    if($validator) {
-      if(validate_param('param2', $validator)) {
-	header("HTTP/1.1 403 Forbidden: invalid input: param2 validator: $validator");
-	print "invalid input: '".$_REQUEST['param2']."' validator: $validator";
-	kp_log( $root, "User $name execute: $job param2 invalid input: '".$_REQUEST['param2']."' validator: $validator\n");
-	exit(0);
-      }
-      putenv("PARAM2=".$_REQUEST['param2']);
-    }
-    $validator = getvalidator($root, $job, 'param3');
-    if($validator) {
-      if(validate_param('param3', $validator)) {
-	header("HTTP/1.1 403 Forbidden: invalid input: param3 validator: $validator");
-	print "invalid input: '".$_REQUEST['param3']."' validator: $validator";
-	kp_log( $root, "User $name execute: $job param3 invalid input: '".$_REQUEST['param3']."' validator: $validator\n");
-	exit(0);
-      }
-      putenv("PARAM3=".$_REQUEST['param3']);
     }
     
     $d = date("Ymd\-G\:i\:s\-").$name;
