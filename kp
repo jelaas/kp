@@ -46,28 +46,31 @@ if(!$_SERVER["KPCOOKIETIMEOUT"]) {
   exit(0);  
 }
 
-if(!file_exists($root."/tmp")) {
-  header("HTTP/1.1 500 Configuration error. $root/tmp");
-  header('Content-type: text/plain');
-  print "Configuration error. $root/tmp";
-  exit(0);
-}
-if(!file_exists($root."/exe")) {
-  header("HTTP/1.1 500 Configuration error. $root/exe");
-  header('Content-type: text/plain');
-  print "Configuration error. $root/exe";
-  exit(0);
-}
 if(!file_exists($root."/log")) {
   header("HTTP/1.1 500 Configuration error. $root/log");
   header('Content-type: text/plain');
   print "Configuration error. $root/log";
   exit(0);
 }
+if(!file_exists($root."/tmp")) {
+  header("HTTP/1.1 500 Configuration error. $root/tmp");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/tmp";
+  kp_log($root, "Configuration error. $root/tmp");
+  exit(0);
+}
+if(!file_exists($root."/exe")) {
+  header("HTTP/1.1 500 Configuration error. $root/exe");
+  header('Content-type: text/plain');
+  print "Configuration error. $root/exe";
+  kp_log($root, "Configuration error. $root/exe");
+  exit(0);
+}
 if(!file_exists($root."/auth")) {
   header("HTTP/1.1 500 Configuration error. $root/auth");
   header('Content-type: text/plain');
   print "Configuration error. $root/auth";
+  kp_log($root, "Configuration error. $root/auth");
   exit(0);
 }
 
@@ -77,6 +80,7 @@ if(!file_exists($root."/run")) {
   header("HTTP/1.1 500 Configuration error. $root/run");
   header('Content-type: text/plain');
   print "Configuration error. $root/run";
+  kp_log($root, "Configuration error. $root/run");
   exit(0);
 }
 
@@ -100,6 +104,7 @@ if(!file_exists($root."/secrets")) {
   header("HTTP/1.1 500 Configuration error. $root/secrets");
   header('Content-type: text/plain');
   print "Configuration error. $root/secrets";
+  kp_log($root, "Configuration error. $root/secrets");
   exit(0);
 }
 
@@ -110,6 +115,7 @@ if($dh = opendir($dir)) {
   header("HTTP/1.1 500 Configuration error. $root/secrets readable");
   header('Content-type: text/plain');
   print "Configuration error. $root/secrets readable";
+  kp_log($root, "Configuration error. $root/secrets readable");
   exit(0);
 }
 
@@ -119,6 +125,12 @@ if($dh = opendir($dir)) {
 if(!isset($_SERVER["PATH_INFO"])) {
   header("Location: ".$SERVICE."/");
   exit(0);
+}
+
+function kp_log($root, $message) {
+  $d = date("Ymd\-G\:i\:s");
+  $message = str_replace("\n", " ", $message);
+  file_put_contents( $root."/log/kp.log", $d." ".$message."\n", FILE_APPEND);
 }
 
 # Clear out old sessions
@@ -173,8 +185,10 @@ if($sesid == "invalid") {
       header("HTTP/1.1 500 Failed to connect to $CASURL/validate");
       header('Content-type: text/plain');
       print "Failed to connect to $CASURL/validate\n";
+      kp_log($root, "Failed to connect to $CASURL/validate");
       $e  = curl_error($ch);
       print "curl_error: $e\n";
+      kp_log($root, "curl_error: $e");
       exit(0);
     }
     curl_close ($ch);
@@ -195,9 +209,10 @@ if($sesid == "invalid") {
       header("HTTP/1.1 500 Failed to write to $root/tmp");
       header('Content-type: text/plain');
       print "Failed to write to $root/tmp";
+      kp_log($root, "Failed to write to $root/tmp");
       exit(0);
     }
-    file_put_contents( $root."/log/kp.log", "User $name logged in using sesid: $sesid\n", FILE_APPEND);
+    kp_log( $root, "User $name logged in using sesid: $sesid");
   }
 }
 
@@ -229,7 +244,7 @@ if(file_exists($root."/etc/admin")) {
     closedir($dh);
   } else {
     header("HTTP/1.1 503 could not open $dir");
-    file_put_contents( $root."/log/kp.log", "503 could not open $dir\n", FILE_APPEND);
+    kp_log( $root, "503 could not open $dir\n");
     exit(0);
   }
   $fn = $root."/etc/admin";
