@@ -9,6 +9,12 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
 
+function kp_log($root, $message) {
+  $d = date("Ymd\-G\:i\:s");
+  $message = str_replace("\n", " ", $message);
+  file_put_contents( $root."/log/kp.log", $d." ".$message."\n", FILE_APPEND);
+}
+
 # Clear out old sessions
 $dir = $root."/tmp";
 $old = time() - $_SERVER["KPSESSIONTIMEOUT"]*60;
@@ -42,7 +48,7 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
       $name="";
     } else {
       unlink($root."/tmp/KP-".$sesid);
-      file_put_contents( $root."/log/kp.log", "User $name logged out from session $sesid\n", FILE_APPEND);
+      kp_log( $root, "User $name logged out from session $sesid");
     }
   }
 }
