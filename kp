@@ -171,6 +171,35 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
   }
 }
 
+function roles_get() {
+  global $root;
+  $roles = array();
+  
+  /* Fetch user roles */
+  $dir = $root."/auth";
+  if($dh = opendir($dir)) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      $fn = $dir."/".$file;
+      $users=file_get_contents($fn);
+      $u = explode("\n", $users);
+      foreach ($u as $key => $user) {
+	if($user == $name) {
+	  array_push($roles, $file);
+	  break;
+	}
+      }
+    }
+    closedir($dh);
+  } else {
+    header("HTTP/1.1 503 could not open $dir");
+    kp_log( $root, "503 could not open $dir\n");
+    exit(0);
+  }
+  return $roles;
+}
+
 if($sesid == "invalid") {
   if (!isset($_REQUEST['ticket'])) {
     header("Location: $CASURL/login?service=".$SERVICE);
@@ -202,6 +231,15 @@ if($sesid == "invalid") {
     }
     $name = $arr[1];
     $pgt = $arr[2];
+    
+    $roles = roles_get();
+    if(!count($roles)) {
+      header("HTTP/1.1 403 Forbidden: no roles");
+      header('Content-type: text/plain');
+      print "You have no defined roles in the system.";
+      kp_log($root, "User $name rejected, since the user has no system roles");
+      exit(0);
+    }
 
     $sesid = time() . mt_rand();
     setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/", '', FALSE, TRUE);
@@ -223,30 +261,7 @@ if (isset($_REQUEST['ticket'])) {
 
 $createjob="0";
 if(file_exists($root."/etc/admin")) {
-  $roles = array();
-  
-  /* Fetch user roles */
-  $dir = $root."/auth";
-  if($dh = opendir($dir)) {
-    while (($file = readdir($dh)) !== false) {
-      if($file == ".") continue;
-      if($file == "..") continue;
-      $fn = $dir."/".$file;
-      $users=file_get_contents($fn);
-      $u = explode("\n", $users);
-      foreach ($u as $key => $user) {
-	if($user == $name) {
-	  array_push($roles, $file);
-	  break;
-	}
-      }
-    }
-    closedir($dh);
-  } else {
-    header("HTTP/1.1 503 could not open $dir");
-    kp_log( $root, "503 could not open $dir\n");
-    exit(0);
-  }
+  $roles = roles_get();
   $fn = $root."/etc/admin";
   if(file_exists($fn)) {
     $adminroles = file_get_contents($fn);
