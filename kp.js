@@ -626,13 +626,15 @@ function gottags(text) {
 	if($.inArray(arr[i], curtags) >= 0) {
 	    pathv = curtags.filter(function (e) {if(e == arr[i]) return false;return true;});
 	    path = pathv.join('/');
+	    linkname = "<b>"+arr[i]+"</b>";
 	} else {
 	    if(pathinfo.length > 1)
 		path = pathinfo.substr(1) + "/" + arr[i];
 	    else
 		path = arr[i];
+	    linkname = arr[i];
 	}
-	$("#tags").append('<a href="'+baseurl+"kp/"+path+'">'+arr[i]+'</a> ');
+	$("#tags").append('<a href="'+baseurl+"kp/"+path+'">'+linkname+'</a> ');
     }
 }
 
