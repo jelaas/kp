@@ -4,7 +4,7 @@
  * Copyright: Jens Låås, UU 2012
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
-var baseurl, username;
+var baseurl, username, pathinfo;
 var glob_logid = 0;
 var jobs = { };
 var logs = [ ];
@@ -615,12 +615,24 @@ function gotroles(text) {
 
 function gottags(text) {
     var arr = text.split('\n');
+    var curtags = pathinfo.split('/');
+
+    curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
 
     $("#tags").append("Tags: ");
 
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
-	$("#tags").append('<a href="'+arr[i]+'">'+arr[i]+'</a> ');
+	if($.inArray(arr[i], curtags) >= 0) {
+	    pathv = curtags.filter(function (e) {if(e == arr[i]) return false;return true;});
+	    path = pathv.join('/');
+	} else {
+	    if(pathinfo.length > 1)
+		path = pathinfo.substr(1) + "/" + arr[i];
+	    else
+		path = arr[i];
+	}
+	$("#tags").append('<a href="'+baseurl+"kp/"+path+'">'+arr[i]+'</a> ');
     }
 }
 
