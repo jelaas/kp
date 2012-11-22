@@ -130,6 +130,7 @@ if(!isset($_SERVER["PATH_INFO"])) {
 function kp_log($root, $message) {
   $d = date("Ymd\-G\:i\:s");
   $message = str_replace("\n", " ", $message);
+  $message = str_replace("\r", " ", $message);
   file_put_contents( $root."/log/kp.log", $d." ".$message."\n", FILE_APPEND);
 }
 
@@ -160,8 +161,9 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
     $sesid="invalid";
     $name="";
   } else {
-    $name = file_get_contents($root."/tmp/KP-".$sesid);
+    list($name, $nonce) = explode("\n", file_get_contents($root."/tmp/KP-".$sesid));
     if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+      kp_log($root, "invalid username $name in session (nonce=$nonce)");
       $sesid="invalid";
       $name="";
     } else {
@@ -221,7 +223,7 @@ if($sesid == "invalid") {
       exit(0);
     }
     curl_close ($ch);
-
+    
     $arr = explode( "\n", $result );
     $code = $arr[0];
     
@@ -241,9 +243,10 @@ if($sesid == "invalid") {
       exit(0);
     }
 
-    $sesid = time() . mt_rand();
+    $sesid = time() . mt_rand() . mt_rand();
+    $nonce = mt_rand() . mt_rand();
     setcookie("session", $sesid, time()+($_SERVER["KPCOOKIETIMEOUT"]*60), "/", '', FALSE, TRUE);
-    if(file_put_contents( $root."/tmp/KP-".$sesid, $name) === FALSE) {
+    if(file_put_contents( $root."/tmp/KP-".$sesid, "$name\n$nonce") === FALSE) {
       header("HTTP/1.1 500 Failed to write to $root/tmp");
       header('Content-type: text/plain');
       print "Failed to write to $root/tmp";
@@ -301,7 +304,7 @@ $baseurl = implode("/", $b);
     </style>
  </head>
  <body>
-<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>" createjob="<?=$createjob?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td id="createjob"></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
+<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>" nonce="<?=$nonce?>" createjob="<?=$createjob?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td id="createjob"></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
 <hr/>
 <tt id="tags"></tt>
 <hr/>

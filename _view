@@ -17,7 +17,7 @@ if(!file_exists($root."/tmp/KP-".$sesid)) {
   header("HTTP/1.1 403 Forbidden: no session file");
   exit(0);
 }
-$name = file_get_contents($root."/tmp/KP-".$sesid);
+list($name, $nonce) = explode("\n", file_get_contents($root."/tmp/KP-".$sesid));
 if (!filter_var($name, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
   header("HTTP/1.1 403 Forbidden: username syntax");
   exit(0);

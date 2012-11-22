@@ -4,7 +4,7 @@
  * Copyright: Jens Låås, UU 2012
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
-var baseurl, username, pathinfo;
+var baseurl, username, pathinfo, nonce;
 var glob_logid = 0;
 var jobs = { };
 var logs = [ ];
@@ -252,6 +252,7 @@ function Job(name) {
     }
 
     this.post = function (url, context, callback, errorcb, data) {
+	data['nonce'] = nonce;
 	$.ajax({
             url: url,
             type: 'POST',
@@ -642,6 +643,7 @@ $(function () {
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
+    nonce = $("#user").attr("nonce");
     createjob = $("#user").attr("createjob");
     $.get(baseurl + "_view" + pathinfo,
 	  function(text, status, xhr) { gotlist(text); },
