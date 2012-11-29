@@ -84,6 +84,8 @@ function nonemptystr($var) {
 }
 
 function getvalidator($root, $job, $param) {
+  $pfx = "";
+  
   $fn = $root."/exe/".$job."/".$param;
   if(!file_exists($fn)) {
     return "";
@@ -92,33 +94,39 @@ function getvalidator($root, $job, $param) {
   $a = explode(":", $p);
   $a = explode(" ", $a[1]);
   $a = array_values(array_filter($a, "nonemptystr"));
-  return $a[1];
+  if($a[0] == "checkbox") $pfx = "list:";
+  return $pfx.$a[1];
 }
 
 function validate_param($param, $validator) {
+  $extra="";
+  if(substr($validator,0,5) == "list:") {
+    $validator = substr($validator, 5);
+    $extra = ",";
+  }
   if($validator == "alnum") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z0-9]+$/")))) {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z0-9".$extra."]+$/")))) {
       return 0;
     }
     return 1;
   }
   if($validator == "alpha") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z]+$/"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z".$extra."]+$/"))))
       return 0;
     return 1;
   }
   if($validator == "num") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[0-9]+$/"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[0-9".$extra."]+$/"))))
       return 0;
     return 1;
   }
   if($validator == "path") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>":^[A-Za-z0-9/_.-]+$:"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>":^[A-Za-z0-9/_.".$extra."-]+$:"))))
       return 0;
     return 1;
   }
   if($validator == "url") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[A-Za-z0-9/_+.%:-]+$,"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[A-Za-z0-9/_+.%:".$extra."-]+$,"))))
       return 0;
     return 1;
   }
