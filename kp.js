@@ -426,11 +426,13 @@ function Job(name) {
 		if(event.data.justcreated == 1) {
 		    event.data.delete_cb();
 		} else {
-		    event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
-				    event.data,
-				    event.data.delete_cb,
-				    event.data.run_ecb,
-				    {});
+		    if(confirm("Delete job "+event.data.name+"?")) {
+			event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
+					event.data,
+					event.data.delete_cb,
+					event.data.run_ecb,
+					{});
+		    }
 		}
 	    });
 	} else {
