@@ -428,6 +428,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	header("HTTP/1.1 500 User $name updates $job. Failed to update run");
 	exit(0);
       }
+      if(chmod($root."/exe/".$job."/run", 0755) == FALSE) {
+	kp_log( $root, "User $name updates $job. chmod(run) failed\n");
+      }
     } else {
       kp_log($root, "User $name removes $job/run");
       unlink( $root."/exe/".$job."/run" );
