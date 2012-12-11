@@ -166,6 +166,17 @@ function Param(containerid, n, definition) {
     this.id = '#'+this.container+" tr td[id='"+this.n+"']";
     this.edit = 0;
     
+    this.copy = function (containerid, n) {
+	var cp;
+	cp = new Param();
+	cp.container = containerid;
+	cp.def = this.def;
+	cp.n = n;
+	cp.id = '#'+cp.container+" tr td[id='"+cp.n+"']";
+	cp.edit = this.edit;
+	return cp;
+    }
+
     this.display = function () {
 	$(this.id).empty();
 	
@@ -236,6 +247,12 @@ function Param(containerid, n, definition) {
 	    $('#'+this.container).append('<tr><td class="param" id="'+this.n+'">AAAA'+this.n+'</td></tr>');
 	}
     }
+
+    this.remove = function () {
+	if($(this.id).length != 0) {
+	    $(this.id).empty();
+	}
+    }
     
     return this;
 }
@@ -270,6 +287,15 @@ function Job(name) {
 	});
     };
     this.editmode = function (mode) {
+	if( (mode == 0) && (this.edit != mode) ) {
+	    if(this.params_backup !== undefined) {
+		for(i=0;i<this.params.length;i++) {
+		    this.params[i].remove();
+		}
+		this.params = this.params_backup;
+		this.params_backup = undefined;
+	    }
+	}
 	this.edit = mode;
 	for(i=0;i<this.params.length;i++) {
 	    this.params[i].edit = mode;
@@ -569,6 +595,38 @@ function Job(name) {
 	this.read_history();
 	this.edit_display();
     };
+
+    this.drop = function (data) {
+	var src, i;
+	src = jobs[data];
+	if(this.edit) {
+	    $('#description_'+this.name+' textarea').val(src.description);
+	    $('#adminroles_'+this.name+' textarea').val(src.adminroles);
+	    $('#roles_'+this.name+' textarea').val(src.roles);
+	    $('#tags_'+this.name+' textarea').val(src.tags);
+	    $('#run_'+this.name+' textarea').val(src.run);
+	    /* remove params */
+	    if(this.params_backup === undefined) {
+		this.params_backup = this.params;
+	    }
+	    for(i=0;i<this.params.length;i++) {
+		this.params[i].remove();
+	    }
+	    this.params = [];
+	    
+	    /* copy params */
+	    for(i=0;i<src.params.length;i++) {
+		this.params.unshift(src.params[i].copy("params_"+this.name, i+1));
+	    }
+	    
+	    /* display params */
+	    this.editmode(1);
+	    for(i=0;i<this.params.length;i++) {
+		this.params[i].framework_create();
+		this.params[i].display();
+	    }
+	}
+    }
     
     this.framework_create = function () {
 	if ($('#job_'+this.name).length == 0) {
@@ -576,7 +634,7 @@ function Job(name) {
 			       this.name +
 			       '"><td COLSPAN=2>' +
 			       '<img WIDTH=18 HEIGHT=18 id="jobtoggle_'+this.name+'" src="'+baseurl+'plus.png">&nbsp;' +
-			       '<span class="name" id="jobname_' + this.name + '">'+this.name+'</span>&nbsp;' +
+			       '<span draggable="true" class="name" id="jobname_' + this.name + '">'+this.name+'</span>&nbsp;' +
 			       '<span class="name" id="jobedit_' + this.name + '"></span>&nbsp;' +
 			       '</td>' +
 			       '</tr><tr class="jobrow" id="jobdata_' +
@@ -594,6 +652,24 @@ function Job(name) {
 			       '<td valign=top class="run" id="run_' + this.name + '"></td>' +
 			       '<td valign=top class="history" id="history_' + this.name + '">logg historik</td>' +
 			       '</tr>');
+	    var job = this;
+	    $('#jobname_'+this.name).bind('dragstart', function(event) {
+		/* use variable, since bind's this is the global context */
+		event.originalEvent.dataTransfer.setData("text/plain",job.name);
+	    });
+	    $('#jobname_'+this.name).bind('dragover', function(event) {
+		event.originalEvent.stopPropagation();
+		event.originalEvent.preventDefault();
+	    });
+	    $('#jobname_'+this.name).bind('dragenter', function(event) {
+		event.originalEvent.stopPropagation();
+		event.originalEvent.preventDefault();
+	    });
+	    $('#jobname_'+this.name).bind('drop', function(event) {
+		event.originalEvent.stopPropagation();
+		event.originalEvent.preventDefault();
+		job.drop(event.originalEvent.dataTransfer.getData("text/plain"));
+	    });
 	    $('#jobtoggle_'+this.name).click(this, function(event) {
                 $('#jobdata_'+event.data.name).toggle(30);
 		if(localStorage[event.data.name+'.'+'hide'] == 1)
