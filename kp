@@ -173,7 +173,7 @@ if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=
   }
 }
 
-function roles_get() {
+function roles_get($name) {
   global $root;
   $roles = array();
   
@@ -234,7 +234,7 @@ if($sesid == "invalid") {
     $name = $arr[1];
     $pgt = $arr[2];
     
-    $roles = roles_get();
+    $roles = roles_get($name);
     if(!count($roles)) {
       header("HTTP/1.1 403 Forbidden: no roles");
       header('Content-type: text/plain');
@@ -264,7 +264,7 @@ if (isset($_REQUEST['ticket'])) {
 
 $createjob="0";
 if(file_exists($root."/etc/admin")) {
-  $roles = roles_get();
+  $roles = roles_get($name);
   $fn = $root."/etc/admin";
   if(file_exists($fn)) {
     $adminroles = file_get_contents($fn);
