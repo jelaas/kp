@@ -245,6 +245,31 @@ function Param(containerid, n, definition) {
 		    return val;
 		}
 	    }
+	    if(arr[0] == "radio") {
+		var options = "";
+		var maxlen = arr[2];
+		for(i=3;i<arr.length;i++) {
+		    var opttext;
+		    if(arr[i].length > maxlen)
+			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
+		    else
+			opttext = arr[i];
+		    options = options + '<br>&nbsp;<input type="radio" name="'+this.container+this.n+'"value="'+arr[i]+'">'+opttext;
+		}
+		$(this.id).append(options);
+		this.value = function () {
+		    var values;
+		    var val="";
+		    values = $(this.id +' input');
+		    for(i=0;i<values.length;i++) {
+			if(values[i].checked) {
+			    if(val.length) val += ",";
+			    val += values[i].value;
+			}
+		    }
+		    return val;
+		}
+	    }
 	}
     }
 
