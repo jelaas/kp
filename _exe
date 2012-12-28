@@ -476,7 +476,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       }
     }
     
-    $d = date("Ymd\-G\:i\:s\-").$name;
+    $d = date("Ymd\-H\:i\:s\-").$name;
     if (! function_exists('pcntl_fork')) {
       header("HTTP/1.1 503 PCNTL functions not available on this PHP installation. KP wont work");
       print('PCNTL functions not available on this PHP installation. KP wont work!');
