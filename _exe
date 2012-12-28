@@ -105,13 +105,13 @@ function validate_param($param, $validator) {
     $extra = ",";
   }
   if($validator == "alnum") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z0-9".$extra."]+$/")))) {
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-ZÅ-Öa-zå-ö0-9".$extra."]+$/")))) {
       return 0;
     }
     return 1;
   }
   if($validator == "alpha") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-Za-z".$extra."]+$/"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-ZÅ-Öa-zå-ö".$extra."]+$/"))))
       return 0;
     return 1;
   }
@@ -121,7 +121,7 @@ function validate_param($param, $validator) {
     return 1;
   }
   if($validator == "path") {
-    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>":^[A-Za-z0-9/_.".$extra."-]+$:"))))
+    if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>":^[A-ZÅ-Öa-zå-ö0-9/_.".$extra."-]+$:"))))
       return 0;
     return 1;
   }
