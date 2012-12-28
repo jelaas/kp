@@ -126,10 +126,16 @@ function Log(name) {
 	    });
 	}
     }
+
+    this.lengthInUtf8Bytes = function(str) {
+    // Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
+	var m = encodeURIComponent(str).match(/%[89ABab]/g);
+	return str.length + (m ? m.length : 0);
+    }
     
     this.poll_cb = function (text,status,xhr) {
 	$('#logdata_'+this.id).append(text);
-	this.pos += text.length;
+	this.pos += this.lengthInUtf8Bytes(text);
 	$('#logdata_'+this.id)[0].scrollTop=$('#logdata_'+this.id)[0].scrollHeight;
     }
     
