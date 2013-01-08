@@ -93,9 +93,9 @@ function getvalidator($root, $job, $param) {
   $p = rtrim(file_get_contents($fn));
   $a = explode(":", $p);
   array_shift($a);
-  if($a[0] == "checkbox") $pfx = "list:";
   $a = explode(" ", implode(":", $a));
   $a = array_values(array_filter($a, "nonemptystr"));
+  if($a[0] == "checkbox") $pfx = "list:";
   return $pfx.$a[1];
 }
 
