@@ -108,7 +108,7 @@ Parameter description
 <text>: text <content>
 <text>: select <content> <maximum display length> <options>
 
-content: alpha|alnum|num|path|url
+content: [opt:](alpha|alnum|num|path|url)
 Types: text|select
 
 alpha: [A-Za-z]+
@@ -120,6 +120,8 @@ num: [0-9]+
 Examples.
 Select a value: select alnum A B C D
 Input some text: text alpha
+
+If prefixed with "opt:" the value is allowed to be empty.
 
 Per job secrets
 ---------------

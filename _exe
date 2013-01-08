@@ -92,9 +92,10 @@ function getvalidator($root, $job, $param) {
   }
   $p = rtrim(file_get_contents($fn));
   $a = explode(":", $p);
-  $a = explode(" ", $a[1]);
-  $a = array_values(array_filter($a, "nonemptystr"));
+  array_shift($a);
   if($a[0] == "checkbox") $pfx = "list:";
+  $a = explode(" ", implode(":", $a));
+  $a = array_values(array_filter($a, "nonemptystr"));
   return $pfx.$a[1];
 }
 
@@ -103,6 +104,12 @@ function validate_param($param, $validator) {
   if(substr($validator,0,5) == "list:") {
     $validator = substr($validator, 5);
     $extra = ",";
+  }
+
+  # Optional. Parameter may be empty
+  if(substr($validator,0,4) == "opt:") {
+    $validator = substr($validator, 4);
+    if(strlen($_REQUEST[$param]) == 0) return 0;
   }
   if($validator == "alnum") {
     if (filter_var($_REQUEST[$param], FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[A-ZÅ-Öa-zå-ö0-9".$extra."]+$/")))) {
