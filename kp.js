@@ -308,6 +308,8 @@ function Job(name) {
     this.adminroles = '';
     this.admin = "0";
     this.params = [];
+    this.pollcounter = 0;
+    this.pollnow = 0;
     this.ajax = function (url, context, callback) {
 	$.ajax({
             url: url,
@@ -487,6 +489,7 @@ function Job(name) {
 				    event.data.run_cb,
 				    event.data.run_ecb,
 				    postparams);
+		    event.data.pollnow = 5;
 		}
 	    });
 	}
@@ -530,11 +533,26 @@ function Job(name) {
     }
 
     this.history_display = function () {
-	var i;
+	var i, elem, anim;
+	var loginfo, logname, logstatus;
 	$('#history_'+this.name).empty();
 	for(i=0;i<this.logs.length;i++) {
-	    $('#history_'+this.name).append('<tt id="hist_'+this.name+'_'+i+'">'+this.logs[i]+"<br></tt>");
-	    $('#hist_'+this.name+'_'+i).click(this.logs[i], function(event) {
+	    loginfo = this.logs[i].split(' ');
+	    logname = loginfo[0];
+	    logstatus = loginfo[1];
+	    if(logstatus == "r")
+		anim = 'class="running"';
+	    else
+		anim = "";
+	    elem = $('#history_'+this.name).append('<tt '+anim+' id="hist_'+this.name+'_'+i+'">'+logname+"<br></tt>");
+	    if(logstatus == "0")
+		$('#hist_'+this.name+'_'+i).css("background-color","lightgreen");
+            else {
+		if(logstatus != "r")
+		    $('#hist_'+this.name+'_'+i).css("background-color","#faa");
+	    }
+	    
+	    $('#hist_'+this.name+'_'+i).click(logname, function(event) {
 		new Log(event.data);
 	    });
 	}
@@ -718,16 +736,23 @@ function Job(name) {
 	}
     }
 
-
     this.poll = function() {
-	this.read_history();
+	if(this.pollnow > 0) {
+	    this.pollcounter = 0;
+	    this.pollnow = this.pollnow-1;
+	}
+	if(this.pollcounter < 1) {
+	    this.read_history();
+	    this.pollcounter = 20;
+	}
+	this.pollcounter = this.pollcounter-1;
     };
 
     /* use variable, since setInterval's this is the global context */
     var job = this;
     this.timer = setInterval(function(){
 	job.poll();
-    }, 5000);
+    }, 1000);
 
     this.read();
     return this;

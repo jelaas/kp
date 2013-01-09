@@ -53,3 +53,14 @@ tr.logrow:nth-of-type(even) {
   background-color:#5ee;
 }
 
+.running {
+animation: runningframes 1s;
+animation-iteration-count: infinite;
+animation-direction: alternate;
+}
+
+@keyframes runningframes
+{
+0%   {color: white;}
+100% {color: blue;}
+}

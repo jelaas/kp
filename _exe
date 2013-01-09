@@ -52,7 +52,12 @@ if($attr == "logs") {
       $logjob=file_get_contents($fn);
       if($logjob == $job) {
 	$f = strstr($file,'.', 1);
-	array_push($history, $f);
+	if(file_exists($root."/log/".$f.".status")) {
+	  $status = file_get_contents($root."/log/".$f.".status");
+	  array_push($history, "$f $status");
+	}
+	else
+	  array_push($history, "$f r");
       }
     }
     closedir($dh);
