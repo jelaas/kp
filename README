@@ -105,7 +105,7 @@ creator [optional ]
 Parameter description
 ---------------------
 
-<text>: text <content>
+<text>: text <content> <max input length> <maximum display length>
 <text>: select <content> <maximum display length> <options>
 
 content: [opt:](alpha|alnum|num|path|url)
