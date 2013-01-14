@@ -199,7 +199,7 @@ function Param(containerid, n, definition) {
 	    arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
 	    arr.shift();
 	    if(arr[0] == "text") {
-		$(this.id).append('<input type="text" maxlength="8" size="8">');
+		$(this.id).append('<input type="text" maxlength="256" size="8">');
 		this.value = function () {
 		    return $(this.id + ' input').val();
 		}
