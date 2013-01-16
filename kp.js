@@ -10,6 +10,20 @@ var jobs = { };
 var logs = [ ];
 var roles = [ ];
 
+String.prototype.toHHMMSS = function () {
+    var sec_numb    = parseInt(this);
+    var hours   = Math.floor(sec_numb / 3600);
+    var minutes = Math.floor((sec_numb - (hours * 3600)) / 60);
+    var seconds = sec_numb - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if(hours == 0 && minutes == 0) return seconds+"s";
+    if (seconds < 10) {seconds = "0"+seconds;}
+    if(hours == 0) return minutes+':'+seconds;
+    if (minutes < 10) {minutes = "0"+minutes;}
+    return hours+':'+minutes+':'+seconds;
+}
+
 function ajax(url, context, callback) {
     $.ajax({
         url: url,
@@ -58,11 +72,15 @@ function Log(name) {
     };
     
     this.time_display = function () {
+	var timestring;
+
 	$('#logtime_'+this.id).empty();
 	if(this.end >= this.start) {
-	    $('#logtime_'+this.id).append(" Runtime: " + (this.end-this.start)+'s');
+	    timestring = ((this.end-this.start)+"").toHHMMSS();
+	    $('#logtime_'+this.id).append(" Runtime: " + timestring);
 	} else {
-	    $('#logtime_'+this.id).append(" Runtime: " + Math.ceil(($.now()/1000)-this.start) +'s');
+	    timestring = (Math.ceil(($.now()/1000)-this.start)+"").toHHMMSS();
+	    $('#logtime_'+this.id).append(" Runtime: " + timestring);
 	}
     };
     
