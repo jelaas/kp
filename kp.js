@@ -824,15 +824,19 @@ $(function () {
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
+    var curtags = pathinfo.split('/');
+    curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
     nonce = $("#user").attr("nonce");
     createjob = $("#user").attr("createjob");
-    $.get(baseurl + "_view" + pathinfo,
-	  function(text, status, xhr) { gotlist(text); },
-	  "text");
+    if(curtags.length) {
+	$.get(baseurl + "_view" + pathinfo,
+	      function(text, status, xhr) { gotlist(text); },
+	      "text");
+    }
     $.get(baseurl + "_auth/" + username,
 	  function(text, status, xhr) { gotroles(text); },
 	  "text");
-    $.get(baseurl + "_tags",
+    $.get(baseurl + "_tags" + pathinfo,
 	  function(text, status, xhr) { gottags(text); },
 	  "text");
     if(createjob == "1") {

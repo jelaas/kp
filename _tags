@@ -8,6 +8,8 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
 
+$curtags=array_values(array_filter(explode("/", $_SERVER["PATH_INFO"])));
+
 $tags = array();
 
 $dir = $root."/exe";
@@ -19,8 +21,21 @@ if($dh = opendir($dir)) {
     if(!file_exists($fn)) {
       continue;
     }
+    $flag=0;
     $jobtags=file_get_contents($fn);
     $u = explode("\n", $jobtags);
+
+    # if not toplevel (no tags). only select tags from jobs containing of the current tags
+    if(count($curtags)) {
+      foreach ($u as $key => $tag) {
+	if(strlen($tag) > 0) {
+	  if(in_array($tag,$curtags)) {
+	    $flag = 1;
+	  }
+	}
+      }
+      if($flag == 0) continue;
+    }
     foreach ($u as $key => $tag) {
       if(strlen($tag) > 0) {
 	$tags[$tag] = 1;
