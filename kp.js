@@ -505,7 +505,7 @@ function Job(name) {
 		for(i=0;i<event.data.params.length;i++) {
 		    postparams['param'+event.data.params[i].n] = event.data.params[i].value();
 		}
-		if(confirm("Run "+event.data.name+"?")) {
+		if(confirm("Run: '"+event.data.nicename+"' ?")) {
 		    event.data.post(baseurl + "_exe/" + event.data.name + "/run",
 				    event.data,
 				    event.data.run_cb,
