@@ -25,12 +25,13 @@ if($dh = opendir($dir)) {
     $jobtags=file_get_contents($fn);
     $u = explode("\n", $jobtags);
 
-    # if not toplevel (no tags). only select tags from jobs containing of the current tags
+    # if not toplevel (no tags). only select tags from jobs containing the current tags
+    $flag=1;
     if(count($curtags)) {
-      foreach ($u as $key => $tag) {
+      foreach ($curtags as $key => $tag) {
 	if(strlen($tag) > 0) {
-	  if(in_array($tag,$curtags)) {
-	    $flag = 1;
+	  if(!in_array($tag,$u)) {
+	    $flag = 0;
 	  }
 	}
       }
