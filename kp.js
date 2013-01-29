@@ -577,6 +577,20 @@ function Job(name) {
 	    $('#hist_'+this.name+'_'+i).click(logname, function(event) {
 		new Log(event.data);
 	    });
+	    $('#hist_'+this.name+'_'+i).live('mouseover mouseout', function(event) {
+		if (event.type == 'mouseover') {
+		    if($(this).data('mflag') != '1') {
+			$(this).data('bgcolor', $(this).css('background-color'));
+			$(this).data('mflag', '1');
+			$(this).css('background-color','white');
+		    }
+		}
+		if (event.type == 'mouseout') {
+		    $(this).css('background-color', $(this).data('bgcolor'));
+		    $(this).data('mflag', '0');
+		}
+		return false;
+	    });
 	}
     }
 
