@@ -281,9 +281,12 @@ if(file_exists($root."/etc/admin")) {
 $RURI=$_SERVER['REQUEST_URI'];
 $a = explode("?", $_SERVER['REQUEST_URI']);
 $baseurl = substr($a[0], 0, strlen($a[0])-strlen($_SERVER["PATH_INFO"]));
-$b = explode("/", $baseurl);
+$b = array_filter(explode("/", $baseurl));
 array_pop($b);
-$baseurl = implode("/", $b);
+if(count($b))
+  $baseurl = "/".implode("/", $b);
+else
+  $baseurl="";
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
