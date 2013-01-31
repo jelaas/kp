@@ -448,9 +448,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	header("HTTP/1.1 500 User $name updates $job. Failed to update run");
 	exit(0);
       }
-      if(chmod($root."/exe/".$job."/run", 0755) == FALSE) {
-	kp_log( $root, "User $name updates $job. chmod(run) failed\n");
-      }
     } else {
       kp_log($root, "User $name removes $job/run");
       unlink( $root."/exe/".$job."/run" );
@@ -519,10 +516,18 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(file_exists($secrets)) {
 	  copyfiles($root."/secrets/".$KPSECRETS."/".$job, $rundir);
 	}
-	
+
+	# copy script
+	if(copy("$root/exe/$job/run", $rundir."/run") == FALSE) {
+	  kp_log( $root, "User $name exec $job. copy(run) failed\n");
+	}
+	if(chmod($rundir."/run", 0755) == FALSE) {
+	  kp_log( $root, "User $name exec $job. chmod(run) failed\n");
+	}
+
 	# change cwd to runtime directory
 	chdir($rundir);
-	system("$root/exe/$job/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
+	system("$rundir/run >> $root/log/$d 2>> $root/log/$d < /dev/null", $status);
 	deldir($rundir);
       }
       file_put_contents("$root/log/$d.end", time());
