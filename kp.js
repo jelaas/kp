@@ -557,6 +557,7 @@ function Job(name) {
     this.history_display = function () {
 	var i, elem, anim;
 	var loginfo, logname, logstatus;
+
 	$('#history_'+this.name).empty();
 	for(i=0;i<this.logs.length;i++) {
 	    loginfo = this.logs[i].split(' ');
@@ -577,7 +578,8 @@ function Job(name) {
 	    $('#hist_'+this.name+'_'+i).click(logname, function(event) {
 		new Log(event.data);
 	    });
-	    $('#hist_'+this.name+'_'+i).live('mouseover mouseout', function(event) {
+
+	    $('#hist_'+this.name+'_'+i).on("mouseover mouseout", function(event) {
 		if (event.type == 'mouseover') {
 		    if($(this).data('mflag') != '1') {
 			$(this).data('bgcolor', $(this).css('background-color'));
@@ -644,6 +646,11 @@ function Job(name) {
     }
     
     this.history_cb = function (text,status,xhr) {
+	if(this.logs) {
+	    for(i=0;i<this.logs.length;i++) {
+		$('#hist_'+this.name+'_'+i).off('click mouseover mouseout');
+	    }
+	}
 	this.logs = text.split('\n').filter(function (e) {if(e.length >0) return true;return false;});
 	this.history_display();
     }
