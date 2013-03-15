@@ -14,11 +14,18 @@ else
   $PI="";
 $CASURL=$_SERVER["KPCASURL"];
 $SERVICE=$_SERVER["KPCASSERVICE"].$PI;
+$KPSECRETS=$_SERVER["KPSECRETS"];
 
 if(!$root) {
   header("HTTP/1.1 500 Configuration error. KPHOME undefined.");
   header('Content-type: text/plain');
   print "Configuration error. KPHOME undefined.";
+  exit(0);
+}
+if(!$KPSECRETS) {
+  header("HTTP/1.1 500 Configuration error. KPSECRETS undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPSECRETS undefined.";
   exit(0);
 }
 if(!$CASURL) {
@@ -116,6 +123,16 @@ if($dh = opendir($dir)) {
   header('Content-type: text/plain');
   print "Configuration error. $root/secrets readable";
   kp_log($root, "Configuration error. $root/secrets readable");
+  exit(0);
+}
+
+# Check that the secret directory is writable by kp user.
+$dir = $root."/secrets/".$KPSECRETS;
+if(is_writable($dir) === FALSE) {
+  header("HTTP/1.1 500 Configuration error. Subdir of $root/secrets not writable");
+  header('Content-type: text/plain');
+  print "Configuration error. Subdir of $root/secrets not writable";
+  kp_log($root, "Configuration error. Subdir of $root/secrets not writable");
   exit(0);
 }
 

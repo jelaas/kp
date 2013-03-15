@@ -52,6 +52,11 @@ tr.jobrow:nth-of-type(even) {
 tr.logrow:nth-of-type(even) {
   background-color:#5ee;
 }
+.files {
+  background-color:#efe;
+  color: darkgreen;
+}
+
 
 .running {
 animation: runningframes 1s;

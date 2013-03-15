@@ -330,6 +330,7 @@ function Job(name) {
     this.adminroles = '';
     this.admin = "0";
     this.params = [];
+    this.files = [];
     this.pollcounter = 0;
     this.pollnow = 0;
     this.ajax = function (url, context, callback) {
@@ -367,6 +368,19 @@ function Job(name) {
             success: callback,
 	    error: errorcb,
 	    context: context
+	});
+    };
+    this.postfile = function (url, context, callback, data) {
+	data['nonce'] = nonce;
+	$.ajax({
+            url: url,
+            type: 'POST',
+	    data: data,
+            success: callback,
+	    context: context,
+            cache: false,
+            contentType: false,
+            processData: false
 	});
     };
     this.nicename_display = function () {
@@ -554,6 +568,37 @@ function Job(name) {
 	}
     }
 
+    this.sendfile = function (formdata, name) {
+	this.postfile(baseurl + "_file/" + this.name + "/put/"+name,
+			this,
+			this.read_files,
+			formdata);
+    }
+
+    this.files_display = function () {
+	$('#files_'+this.name).empty();
+	if(this.edit) {
+	    $('#files_'+this.name).append('Files:<table>');
+	    for(i=0;i<this.files.length;i++) {
+		$('#files_'+this.name).append('<tr class="files"><td>'+this.files[i]+'</td><td><img WIDTH=18 HEIGHT=18 id="filedel_'+ this.name + '_' + i +'" src="'+baseurl+'close.png"></td></tr>');
+		$('#filedel_'+ this.name + '_' + i).click({ job: this, n: i }, function(event) {
+		    if(confirm("Delete file " + event.data.job.files[event.data.n] + "?")) {
+			event.data.job.ajax(baseurl + "_file/" + event.data.job.name + "/del/" + event.data.job.files[event.data.n] , event.data.job, event.data.job.read_files);
+		    }
+		});
+	    }
+	    $('#files_'+this.name).append('</table>');
+	    $('#files_'+this.name).append('<form method="post" enctype="multipart/form-data"><label for="file">Upload file:</label><input type="file" name="file" id="file"><br><button type="button" name="submit">Upload</button></form>');
+	    $('#files_'+this.name+' button').click(this, function(event){
+		var fileInput = $('#files_'+event.data.name+' input')[0];
+		var file = fileInput.files[0];
+		var formData = new FormData();
+		formData.append('file', file);
+		event.data.sendfile(formData, file.name);
+	    });
+	}
+    }
+
     this.history_display = function () {
 	var i, elem, anim;
 	var loginfo, logname, logstatus;
@@ -655,6 +700,11 @@ function Job(name) {
 	this.history_display();
     }
 
+    this.files_cb = function (text,status,xhr) {
+	this.files = text.split('\n').filter(function (e) {if(e.length >0) return true;return false;});
+	this.files_display();
+    }
+
     this.read_attr = function (attr) {
 	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr }, this.attr_cb);
     };
@@ -664,6 +714,9 @@ function Job(name) {
     this.read_history = function () {
 	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
+    this.read_files = function () {
+	this.ajax(baseurl + "_file/" + this.name + "/list" , this, this.files_cb);
+    }
     this.display = function () {
 	this.nicename_display();
 	this.params_display();
@@ -673,6 +726,7 @@ function Job(name) {
 	this.adminroles_display();
 	this.tags_display();
 	this.description_display();
+	if(this.edit) this.read_files();
     }
     this.read = function () {
 	this.framework_create();
@@ -685,6 +739,7 @@ function Job(name) {
 	this.read_attr("tags");
 	this.read_attr("admin");
 	this.read_history();
+	if(this.edit) this.read_files();
 	this.edit_display();
     };
 
@@ -741,7 +796,10 @@ function Job(name) {
 			       '<table border="0">' + 
 			       '<tr><td class="message" id="msg_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
-			       '<td valign=top class="run" id="run_' + this.name + '"></td>' +
+			       '<td valign=top ><table border="0">' + 
+			       '<tr><td valign=top class="run" id="run_' + this.name + '"></td></tr>' +
+			       '<tr><td valign=top id="files_' + this.name + '"></td></tr>' +
+			       '</table></td>' +
 			       '<td valign=top class="history" id="history_' + this.name + '">logg historik</td>' +
 			       '</tr>');
 	    var job = this;
