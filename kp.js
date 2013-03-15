@@ -726,7 +726,10 @@ function Job(name) {
 	this.adminroles_display();
 	this.tags_display();
 	this.description_display();
-	if(this.edit) this.read_files();
+	if(this.edit) 
+	    this.read_files();
+	else
+	    this.files_display();
     }
     this.read = function () {
 	this.framework_create();
