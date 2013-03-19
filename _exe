@@ -285,6 +285,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'roles') printattr($fn);
   if($attr == 'adminroles') printattr($fn);
   if($attr == 'tags') printattr($fn);
+  if($attr == 'serial') printattr($fn);
   if($attr == 'autodesc') { print "true"; exit(0); }
   if($attr == 'run') {
     if($admin == TRUE) {
@@ -422,6 +423,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       header("HTTP/1.1 500 User $name updates $job. Failed to update tags");
       exit(0);
     }
+    if(file_put_contents( $root."/exe/".$job."/serial", $_REQUEST['serial'])===FALSE) {
+      kp_log( $root, "User $name updates $job. serial failed\n");
+      header("HTTP/1.1 500 User $name updates $job. Failed to update serial");
+      exit(0);
+    }
 
     for ($i = 1; ; $i++) {
       if(isset($_REQUEST['param'.$i])) {
@@ -492,6 +498,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       kp_log( $root, "PCNTL functions not available on this PHP installation. KP wont work!\n");
       exit(0);
     }
+
+    $serial="no";
+    if(file_exists("$root/exe/$job/serial")) {
+      $serial=rtrim(file_get_contents("$root/exe/$job/serial"));
+    }
+
     kp_log( $root, "User $name executes: $job log: $d\n");
     $pid = pcntl_fork();
     if($pid == 0) {
@@ -499,6 +511,37 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       file_put_contents("$root/log/$d.job", $job);
       file_put_contents("$root/log/$d.start", time());
       file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$job."/roles"));
+
+      if($serial == "yes") {
+	kp_log( $root, "$job is serialized, checking lock: $root/tmp/RUN-$job");
+	$pid = posix_getpid();
+	
+	while(TRUE) {
+	  if(!is_link("$root/tmp/RUN-$job")) {
+	    symlink("$pid", "$root/tmp/RUN-$job");
+	  }
+	  $jobpid = readlink("$root/tmp/RUN-$job");
+	  if($jobpid == $pid) {
+	    break;
+	  }
+	  if($jobpid) {
+	    kp_log( $root, "lockfile $root/tmp/RUN-$job exists");
+	    if(posix_kill($jobpid, 0)===FALSE) {
+	      unlink("$root/tmp/RUN-$job");
+	      continue;
+	    }
+	    kp_log( $root, "$name: Forbidden: job $job is serialized and already running");
+	  } else {
+	    kp_log( $root, "Could not create lockfile $root/tmp/RUN-$job");
+	  }
+	  file_put_contents("$root/log/$d", "$job is serialized and already running");
+	  file_put_contents("$root/log/$d.end", time());
+	  file_put_contents("$root/log/$d.status", "255");
+	  posix_kill(posix_getpid(), SIGKILL);
+	  exit(2);
+	}
+	kp_log($root, "Created lockfile $root/tmp/RUN-$job for pid $pid");
+      }
 
       $secrets = $root."/secrets/".$KPSECRETS."/".$job;
       putenv("KPSECRETS"); # Security: dont leak secret to jobs
@@ -533,6 +576,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       file_put_contents("$root/log/$d.end", time());
       file_put_contents("$root/log/$d.status", $status);
       kp_log( $root, "Execution of $job complete (invoked by $name) log: $d status: $status");
+      if($serial == "yes") {
+	unlink("$root/tmp/RUN-$job");
+      }
       
       # Since I never managed to close stdout and stderr within PHP, we kill our process instead.
       # If we dont do this PHP will output headers from the child also..

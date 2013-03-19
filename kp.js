@@ -331,6 +331,7 @@ function Job(name) {
     this.admin = "0";
     this.params = [];
     this.files = [];
+    this.serial = 'no';
     this.pollcounter = 0;
     this.pollnow = 0;
     this.ajax = function (url, context, callback) {
@@ -421,6 +422,20 @@ function Job(name) {
 	    }
 	}
     }
+    this.serial_display = function () {
+	$('#serial_'+this.name).empty();
+	if(this.edit) {
+	    if(this.serial == 'yes')
+		$('#serial_'+this.name).append('serial:<br><input type="checkbox" value="'+this.serial+'" checked>');
+	    else
+		$('#serial_'+this.name).append('serial:<br><input type="checkbox" value="'+this.serial+'">');
+	    this.serial_value = function () {
+		values = $('#serial_'+this.name+' input');
+		if(values[0].checked) return 'yes';
+		return 'no';
+	    }
+	}
+    }
     this.description_display = function () {
 	$('#description_'+this.name).empty();
 	if(this.edit) {
@@ -500,6 +515,7 @@ function Job(name) {
 		}
 		params['description'] = event.data.description_value();
 		params['tags'] = event.data.tags_value();
+		params['serial'] = event.data.serial_value();
 		params['roles'] = event.data.roles_value();
 		params['adminroles'] = event.data.adminroles_value();
 		params['run'] = event.data.run_value();
@@ -684,6 +700,10 @@ function Job(name) {
 	    this.job.tags = text;
 	    this.job.tags_display();
 	}
+	if(this.attr == "serial") {
+	    this.job.serial = text;
+	    this.job.serial_display();
+	}
 	if(this.attr == "admin") {
 	    this.job.admin = text;
 	    this.job.edit_display();
@@ -725,6 +745,7 @@ function Job(name) {
 	this.roles_display();
 	this.adminroles_display();
 	this.tags_display();
+	this.serial_display();
 	this.description_display();
 	if(this.edit) 
 	    this.read_files();
@@ -740,6 +761,7 @@ function Job(name) {
 	this.read_attr("roles");
 	this.read_attr("adminroles");
 	this.read_attr("tags");
+	this.read_attr("serial");
 	this.read_attr("admin");
 	this.read_history();
 	if(this.edit) this.read_files();
@@ -794,6 +816,7 @@ function Job(name) {
 			       '<tr><td id="adminroles_' + this.name + '"></td></tr>' +
 			       '<tr><td id="roles_' + this.name + '"></td></tr>' +
 			       '<tr><td id="tags_' + this.name + '"></td></tr>' +
+			       '<tr><td id="serial_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
 			       '<td valign=top NOWRAP><table border="0" id="params_'+this.name+'"></table>' + 
 			       '<table border="0">' + 
