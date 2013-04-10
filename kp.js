@@ -145,6 +145,9 @@ function Log(name) {
 	}
     }
 
+    //function byteCount(s) {
+//	return encodeURI(s).split(/%..|./).length - 1;
+ //   }
     this.lengthInUtf8Bytes = function(str) {
     // Matches only the 10.. bytes that are non-initial characters in a multi-byte sequence.
 	var m = encodeURIComponent(str).match(/%[89ABab]/g);
@@ -502,7 +505,7 @@ function Job(name) {
 	$('#run_'+this.name).empty();
 	if(this.edit) {
 	    $('#run_'+this.name).append('Script<br><textarea  cols=60 rows=15>'+this.run+'</textarea>');
-	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Update</button>');
+	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Save</button>');
 	    this.run_value = function () {
 		return $('#run_'+this.name+' textarea').val();
 	    };
@@ -823,8 +826,8 @@ function Job(name) {
 			       '<tr><td class="message" id="msg_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
 			       '<td valign=top ><table border="0">' + 
-			       '<tr><td valign=top class="run" id="run_' + this.name + '"></td></tr>' +
 			       '<tr><td valign=top id="files_' + this.name + '"></td></tr>' +
+			       '<tr><td valign=top class="run" id="run_' + this.name + '"></td></tr>' +
 			       '</table></td>' +
 			       '<td valign=top class="history" id="history_' + this.name + '">logg historik</td>' +
 			       '</tr>');
