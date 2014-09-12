@@ -92,6 +92,13 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].conv !== undefined && args[i].conv === false) conv=false;
             if(args[i].border) elem.attr("border", args[i].border);
             if(args[i].id) elem.attr("id", args[i].id);
+            if(args[i].cols) elem.attr("cols", args[i].cols);
+            if(args[i].rows) elem.attr("rows", args[i].rows);
+            if(args[i].wrap) elem.attr("wrap", args[i].wrap);
+            if(args[i].width) elem.attr("width", args[i].width);
+	    if(args[i].height) elem.attr("height", args[i].height);
+	    if(args[i].readonly) elem.attr('readonly','readonly');
+            if(args[i].colspan) elem.attr("colspan", args[i].colspan);
             if(args[i].name) elem.attr("name", args[i].name);
             if(args[i].maxlength) elem.attr("maxlength", args[i].maxlength);
             if(args[i].size) elem.attr("size", args[i].size);
@@ -150,9 +157,11 @@ Resource.hr = function (tableelem) {
     return hr;
 };
 
-Resource.image = function (cssclass, src, text) {
-    if(text === undefined) text='';
-    return $('<span class="'+cssclass+'"><img src="'+src+'"/>'+text+'</span>');
+Resource.image = function (appendtoelem, src) {
+    var img;
+    img = $('<img src="'+src+'"/>').appendTo(appendtoelem);
+    Resource._args(img, arguments, 2);
+    return img;
 };
 
 Resource.input.option = function (appendtoelem, value) {
@@ -306,8 +315,10 @@ Resource.paragraph = function (appendtoelem) {
     return p;
 };
 
-Resource.link = function (appendtoelem, text, url) {
-    return $('<a href="'+url+'">'+i18n.t(text)+'</a>').appendTo(appendtoelem);
+Resource.link = function (appendtoelem, url) {
+    var link = $('<a href="'+url+'"/>').appendTo(appendtoelem);
+    Resource._args(link, arguments, 2);
+    return link;
 };
 
 Resource.table.table = function (appendtoelem) {
@@ -359,6 +370,12 @@ Resource.text = function (appendtoelem) {
     return span;
 };
 
+Resource.textarea = function (appendtoelem) {
+    var ta = $('<textarea/>').appendTo(appendtoelem);
+    Resource._args(ta, arguments, 1);
+    return ta;
+};
+
 
 /*
   log object constructor.
@@ -399,24 +416,26 @@ function Log(name) {
     
     this.time_display = function () {
 	var timestring;
-
-	$('#logtime_'+this.id).empty();
+	var elem = this.logtimeelem;
+	
+	elem.empty();
 	if(this.end >= this.start) {
 	    timestring = ((this.end-this.start)+"").toHHMMSS();
-	    $('#logtime_'+this.id).append(" Runtime: " + timestring);
+	    elem.append(" Runtime: " + timestring);
 	} else {
 	    timestring = (Math.ceil(($.now()/1000)-this.start)+"").toHHMMSS();
-	    $('#logtime_'+this.id).append(" Runtime: " + timestring);
+	    elem.append(" Runtime: " + timestring);
 	}
     };
     
     this.status_display = function () {
-	$('#logstatus_'+this.id).empty();
-	$('#logstatus_'+this.id).append(" Status: " + this.status);
+	var elem = this.logstatuselem;
+	elem.empty();
+	elem.append(" Status: " + this.status);
 	if(this.status == "0")
-	    $('#logstatus_'+this.id).css("background-color","lightgreen");
+	    elem.css("background-color","lightgreen");
 	else
-	    $('#logstatus_'+this.id).css("background-color","#f88");
+	    elem.css("background-color","#f88");
     };
     
     this.attr_cb = function (text,status,xhr) {
@@ -447,26 +466,38 @@ function Log(name) {
     }
 
     this.framework_create = function () {
-	if ($('#log_'+this.id).length == 0) {
-	    $('#logs').prepend('<table border=0 class="logtable" id="log_' + this.id +
-			       '"><tr><td COLSPAN=3 >' +
-			       '<img WIDTH=18 HEIGHT=18 id="logdel_'+ this.id +'" src="'+baseurl+'close.png">' +
-			       '<img WIDTH=18 HEIGHT=18 id="logtoggle_'+ this.id +'" src="'+baseurl+'plus.png">&nbsp;' +
-			       this.name +
-			       '</td></tr><tr><td id="logtime_' + this.id +
-			       '"></td><td id="logstatus_' + this.id +
-			       '"></td><td><a href="' + baseurl+ '_log/' +this.name +
-			       '"><img WIDTH=18 HEIGHT=18 src="'+baseurl+'download.png"></a>' +
-			       '</td></tr><tr><td COLSPAN=3 >' +
-			       '<textarea readonly class="log" wrap=off cols=40 rows=35 id="logdata_' +
-			       this.id +
-			       '"></textarea></td></tr></table>'
-			      );
-	    $('#logdel_'+this.id).click(this, function(event) {
-		event.data.remove();
-	    });
-	    $('#logtoggle_'+this.id).click(this, function(event) {
-		$('#logdata_'+event.data.id).toggle(30);
+	var self=this;
+	if(!this.elem) {
+	    this.elem = Resource.table.table($('#logs'), { border: 0, class: "logtable" }, function (tbl) {
+		Resource.table.row(tbl, function (row) {
+		    Resource.table.col(row, { colspan: 3 }, function (col) {
+			Resource.image(col, baseurl+'close.png', { width: 18, height: 18 }, function (img) {
+			    img.click(self, function (event) {
+				event.data.remove();
+			    });
+			});
+			Resource.image(col, baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
+			    img.click(self, function (event) {
+				event.data.dataelem.toggle(30);
+			    });
+			});
+			Resource.text(col, self.name);
+		    });
+		});
+		Resource.table.row(tbl, function (row) {
+		    self.logtimeelem = Resource.table.col(row);
+		    self.logstatuselem = Resource.table.col(row);
+	    	    Resource.table.col(row, function (col) {
+			Resource.link(col, baseurl+ '_log/' +self.name, function(link) {
+			    Resource.image(link, baseurl+'download.png', { width: 18, height: 18 });
+			});
+		    });
+		    Resource.table.row(tbl, function (row) {
+			Resource.table.col(row, { colspan: 3 }, function (col) {
+			    self.dataelem = Resource.textarea(col, { readonly: true, class: 'log', wrap: 'off', cols: 40, rows: 35 });
+			});
+		    });
+		});
 	    });
 	}
     }
@@ -481,9 +512,9 @@ function Log(name) {
     }
     
     this.poll_cb = function (text,status,xhr) {
-	$('#logdata_'+this.id).append(text);
+	this.dataelem.append(text);
 	this.pos += this.lengthInUtf8Bytes(text);
-	$('#logdata_'+this.id)[0].scrollTop=$('#logdata_'+this.id)[0].scrollHeight;
+	this.dataelem.scrollTop=this.dataelem.scrollHeight;
     }
     
     this.poll = function() {
@@ -493,7 +524,7 @@ function Log(name) {
 
     this.remove = function() {
 	if(this.timer != undefined) clearInterval(this.timer);
-	$('#log_'+this.id).empty();
+	this.elem.empty();
 	logs[this.name] = undefined;
     }
 
