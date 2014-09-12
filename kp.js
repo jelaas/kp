@@ -34,6 +34,332 @@ function ajax(url, context, callback) {
     });
 }
 
+// _i18n[""] = '<span lang="sv"></span><span lang="en"></span>';
+i18n = {};
+_i18n = {};
+_i18n["No"] = '<span lang="sv">Nej</span><span lang="en">No</span>';
+_i18n["Yes"] = '<span lang="sv">Ja</span><span lang="en">Yes</span>';
+
+i18n.t = function (text) {
+    if(_i18n[text]) return _i18n[text];
+    return '<span>'+text+'</span>';
+};
+
+/*
+ * Resource
+ * Utility functions to avoid using tags in plaintext when working with the DOM.
+ */
+
+Resource = {};
+Resource.button = {};
+Resource.menu = {};
+Resource.modal = {};
+Resource.input = {};
+Resource.table = {};
+
+Resource.sanitize = function (s) {
+    /* disable tags */
+    s = s.replace(/>/g, '&gt;');
+    s = s.replace(/</g, '&lt;');
+    return s;
+};
+
+Resource.__args = function (cb, elem, args, start) {
+    var sane = true;
+    var conv = true;
+    var callback;
+
+    for(var i=start;i<args.length;i++) {
+        if(args[i] === undefined) alert(typeof args[i]);
+        if(typeof args[i] == "function") {
+            if(cb) {
+                args[i](elem);
+            } else {
+                callback = args[i];
+            }
+            continue;
+        }
+        if(typeof args[i] == "string") {
+            var str;
+            str = args[i];
+            if(sane) str = Resource.sanitize(str);
+            if(conv) str = i18n.t(str);
+            $(str).appendTo(elem);
+            continue;
+        }
+        if(typeof args[i] == "object") {
+            if(args[i].sanitize !== undefined && args[i].sanitize === false) sane=false;
+            if(args[i].conv !== undefined && args[i].conv === false) conv=false;
+            if(args[i].border) elem.attr("border", args[i].border);
+            if(args[i].id) elem.attr("id", args[i].id);
+            if(args[i].name) elem.attr("name", args[i].name);
+            if(args[i].maxlength) elem.attr("maxlength", args[i].maxlength);
+            if(args[i].size) elem.attr("size", args[i].size);
+            if(args[i].class) elem.addClass(args[i].class);
+            continue;
+        }
+    }
+    return callback;
+}
+
+Resource._args = function (elem, args, start) {
+    return Resource.__args(true, elem, args, start);
+};
+
+Resource._args_cb = function (elem, args, start) {
+    return Resource.__args(false, elem, args, start);
+};
+
+Resource.button.click = function (appendtoelem, name, text, eventdata, clickfn) {
+    var but = $('<button type="button" name="'+name+'">'+i18n.t(text)+'</button>');
+    but.appendTo(appendtoelem);
+    but.click(eventdata, clickfn);
+    return but;
+};
+
+Resource.button.close = function () {
+    return $('<button type="button" name="close">'+i18n.t('CLOSE')+'</button>');
+};
+
+Resource.button.ok = function () {
+    return $('<button type="button" name="submit">Ok</button>');
+};
+
+Resource.button.save = function () {
+    return $('<button type="button" name="submit">'+i18n.t("Save")+'</button>');
+};
+
+Resource.form = function(appendtoelem, method, enctype) {
+    if(method === undefined) method="post";
+    if(enctype === undefined) enctype="multipart/form-data";
+    return $('<form method="'+method+'" enctype="'+enctype+'"/>').appendTo(appendtoelem);
+}
+
+Resource.header = function (appendtoelem, size) {
+    var h = $('<h'+size+'>').appendTo(appendtoelem);
+    for(var i=2;i<arguments.length;i++) {
+        $(i18n.t(arguments[i])).appendTo(h);
+    }
+    return h;
+};
+
+Resource.hr = function (tableelem) {
+    var hr;
+    hr = $('<hr/>').appendTo(tableelem);
+    Resource._args(hr, arguments, 1);
+    return hr;
+};
+
+Resource.image = function (cssclass, src, text) {
+    if(text === undefined) text='';
+    return $('<span class="'+cssclass+'"><img src="'+src+'"/>'+text+'</span>');
+};
+
+Resource.input.option = function (appendtoelem, value) {
+    /* Resource.input.option(elem, value, [text ..]) */
+    var opt;
+    opt = $('<option value="'+value+'"/>').appendTo(appendtoelem);
+    for(var i=2;i<arguments.length;i++) {
+        $('<span>'+arguments[i]+'</span>').appendTo(opt);
+    }
+    return opt;
+};
+
+Resource.input.password = function (appendtoelem, label, options) {
+    options.type = "password";
+    return Resource.input.text(appendtoelem, label, options);
+};
+
+Resource.input.select = function (appendtoelem, name) {
+    /* Resource.input.select(elem, name, [label ..]) */
+    var inp, lbl;
+    inp = $('<select name="'+name+'"/>');
+    lbl = $('<label/>').appendTo(appendtoelem);
+    for(var i=2;i<arguments.length;i++) {
+        $(i18n.t(arguments[i])).appendTo(lbl);
+    }
+    inp.appendTo(lbl);
+    return inp;
+};
+
+Resource.input.text = function (appendtoelem, label, options) {
+    /*
+     * Create input element with label
+     * options = { name: "myname", id: "myid" }
+     * Returns input element. Can be used later with .val()
+     */
+    var inp, lbl;
+    var name = options.name;
+    var id = options.id;
+    var maxlength = options.maxlength;
+    var size = options.size;
+    var type = "text";
+    if(id === undefined) id = name;
+    if(name === undefined) name = id;
+    if(maxlength) maxlength=' maxlength="'+maxlength+'"';
+    if(size) size=' size="'+size+'"';
+    if(options.type) type = options.type;
+    inp = $('<input type="'+type+'" name="'+name+'" id="'+id+'" '+
+            maxlength+
+            size+
+            '>');
+    lbl = $('<label>'+i18n.t(label)+'</label>').appendTo(appendtoelem);
+    inp.appendTo(lbl);
+    return inp;
+};
+
+Resource.menu.create = function (elem, fn) {
+    var menu = $('<table/>').appendTo(elem);
+    menu.menuelem = elem;
+    fn(menu);
+}
+
+Resource.menu.item = function (elem, text, fn) {
+    /* create a menuitem in a context menu. i18n enabled */
+    var m;
+    m = $('<tr><td>'+i18n.t(text)+'</td></tr>').appendTo(elem);
+    m.click(function(event) {
+            elem.hide();
+            elem.menuelem.hide();
+            fn();
+        });
+    m.on("mouseover mouseout", highlight);
+    return m;
+};
+
+Resource.modal.alert = function () {
+    /* Resource.modal.alert( "text" .., oldpos )
+     * alert via modal overlay
+     */
+    var elem;
+    var oldpos;
+    $('#overlay').empty();
+    elem = Resource.paragraph($('#overlay'));
+    for(var i=0;i<arguments.length;i++) {
+        if(typeof arguments[i] == "string") {
+            var str;
+            str = arguments[i];
+            str = Resource.sanitize(str);
+            str = i18n.t(str);
+            $(str).appendTo(elem);
+            continue;
+        }
+        if(typeof arguments[i] == "number") {
+            oldpos = arguments[i];
+        }
+    }
+    Resource.button.click($('#overlay'), "submit", "Ok", this, function(event){
+            $('#overlay').hide();
+            $('#fade').hide();
+            if(oldpos) window.scrollTo(0, oldpos);
+        });
+    $('#overlay').show();
+    $('#fade').show();
+};
+
+/* confirm via modal overlay */
+Resource.modal.confirm = function (yes, no) {
+    var elem, oldpos = $(window).scrollTop();
+    var callback;
+    window.scrollTo(0, 0);
+    $('#overlay').empty();
+    elem = Resource.paragraph($('#overlay'));
+    callback = Resource._args_cb(elem, arguments, 2);
+    Resource.button.click($('#overlay'), "yes", yes, this, function(event){
+            $('#overlay').hide();
+            $('#fade').hide();
+            if(oldpos) window.scrollTo(0, oldpos);
+            callback();
+        });
+    Resource.button.click($('#overlay'), "no", no, this, function(event){
+            $('#overlay').hide();
+            $('#fade').hide();
+            if(oldpos) window.scrollTo(0, oldpos);
+        });
+    $('#overlay').show();
+    $('#fade').show();
+};
+
+Resource.overlay = {};
+Resource.overlay.show = function () {
+    var elem = $('#overlay');
+    elem.empty();
+    Resource._args(elem, arguments, 0);
+    elem.attr("previousy", $(window).scrollTop());
+    window.scrollTo(0, 0);
+    elem.show();
+    $('#fade').show();
+    return elem;
+};
+
+Resource.overlay.hide = function () {
+    var y;
+    $('#overlay').hide();
+    $('#fade').hide();
+    y = $('#overlay').attr("previousy");
+    if(y) window.scrollTo(0, y);
+};
+
+Resource.paragraph = function (appendtoelem) {
+    var p = $('<p/>').appendTo(appendtoelem);
+    Resource._args(p, arguments, 1);
+    return p;
+};
+
+Resource.link = function (appendtoelem, text, url) {
+    return $('<a href="'+url+'">'+i18n.t(text)+'</a>').appendTo(appendtoelem);
+};
+
+Resource.table.table = function (appendtoelem) {
+    var tbl = $('<table/>').appendTo(appendtoelem);
+    Resource._args(tbl, arguments, 1);
+    return tbl;
+};
+
+Resource.table.row = function (tableelem) {
+    var row;
+    row = $('<tr/>').appendTo(tableelem);
+    Resource._args(row, arguments, 1);
+    return row;
+};
+
+Resource.span = function (elem) {
+    var span;
+    span = $('<span/>').appendTo(elem);
+    Resource._args(span, arguments, 1);
+    return span;
+};
+
+Resource.div = function (elem) {
+    var div;
+    div = $('<div/>').appendTo(elem);
+    Resource._args(div, arguments, 1);
+    return div;
+};
+
+Resource.table.col = function (rowelem) {
+    /* Resource.table.col( row element, Text ..) */
+    var head = $('<td/>').appendTo(rowelem);
+    Resource._args(head, arguments, 1);
+    return head;
+};
+
+Resource.table.head = function (rowelem) {
+    /* Resource.table.head( row element, Text ..) */
+    var head = $('<th/>').appendTo(rowelem);
+    Resource._args(head, arguments, 1);
+    return head;
+};
+
+Resource.text = function (appendtoelem) {
+    var span = $('<span/>').appendTo(appendtoelem);
+    for(var i=1;i<arguments.length;i++) {
+        $(i18n.t(arguments[i])).appendTo(span);
+    }
+    return span;
+};
+
+
 /*
   log object constructor.
   Starts ajax calls to fill in log information.
