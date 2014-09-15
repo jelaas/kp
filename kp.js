@@ -164,11 +164,31 @@ Resource.image = function (appendtoelem, src) {
     return img;
 };
 
+Resource.input.checkbox = function (appendtoelem, value) {
+    /* Resource.input.option(elem, value, [text ..]) */
+    var opt;
+    opt = $('<input type="checkbox" value="'+value+'"/>').appendTo(appendtoelem);
+    for(var i=2;i<arguments.length;i++) {
+        $('<span>'+arguments[i]+'</span>').appendTo(opt);
+    }
+    return opt;
+};
+
 Resource.input.option = function (appendtoelem, value) {
     /* Resource.input.option(elem, value, [text ..]) */
     var opt;
     opt = $('<option value="'+value+'"/>').appendTo(appendtoelem);
     for(var i=2;i<arguments.length;i++) {
+        $('<span>'+arguments[i]+'</span>').appendTo(opt);
+    }
+    return opt;
+};
+
+Resource.input.radio = function (appendtoelem, value) {
+    /* Resource.input.option(elem, name, value, [text ..]) */
+    var opt;
+    opt = $('<input type="radio" name="'+name+'" value="'+value+'"/>').appendTo(appendtoelem);
+    for(var i=3;i<arguments.length;i++) {
         $('<span>'+arguments[i]+'</span>').appendTo(opt);
     }
     return opt;
@@ -543,35 +563,36 @@ function Log(name) {
   Param object constructor
   
 */
-function Param(containerid, n, definition) {
-    this.container = containerid;
+function Param(parent, n, definition) {
+    this.parent = parent;
     this.def = definition;
     this.n = n;
-    this.id = '#'+this.container+" tr td[id='"+this.n+"']";
     this.edit = 0;
     
-    this.copy = function (containerid, n) {
+    this.copy = function (parent, n) {
 	var cp;
 	cp = new Param();
-	cp.container = containerid;
+	cp.parent = parent;
 	cp.def = this.def;
 	cp.n = n;
-	cp.id = '#'+cp.container+" tr td[id='"+cp.n+"']";
 	cp.edit = this.edit;
 	return cp;
     }
 
     this.display = function () {
-	$(this.id).empty();
+	var self=this;
+	this.elem.empty();
 	
 	if(this.edit) {
-	    $(this.id).append('Parameter '+this.n + '<br><textarea  cols=20 rows=5>'+this.def+'</textarea>');
-	    this.value = function () {
-		return $(this.id+' textarea').val();
-	    }
+	    Resource.text(self.elem, 'Parameter '+this.n);
+	    self.dataelem = Resource.textarea(self.elem, { wrap: 'off', cols: 20, rows: 5 }, self.def);
+	    self.value = function () {
+		return self.dataelem.val();
+	    };
 	} else {
 	    var arr = this.def.split(':');
-	    $(this.id).append("<b>" + arr[0] + ":</b> ");
+	    
+	    Resource.div(self.elem, arr[0], ": ");
 	    arr = this.def.substring(this.def.indexOf(":")).split('\n');
 	    arr = arr[0].split(' ');
 	    arr = jQuery.grep( arr, function (e) { return e.length > 0; } );
@@ -581,29 +602,27 @@ function Param(containerid, n, definition) {
 		var dispsize = 8;
 		if(arr.length >= 2) maxlen = arr[2];
 		if(arr.length >= 3) dispsize = arr[3];
-		$(this.id).append('<input type="text" maxlength="'+maxlen+'" size="'+dispsize+'">');
-		this.value = function () {
-		    return $(this.id + ' input').val();
+		self.dataelem = Resource.input.text(self.elem, "label", { maxlength: maxlen, size: dispsize });
+		self.value = function () {
+		    return this.dataelem.val();
 		}
 	    }
 	    if(arr[0] == "select") {
-		var options = "";
 		var maxlen = arr[2];
+		self.dataelem = Resource.input.select(self.elem, "select");
 		for(i=3;i<arr.length;i++) {
 		    var opttext;
 		    if(arr[i].length > maxlen)
 			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
 		    else
 			opttext = arr[i];
-		    options = options + '<option value="'+arr[i]+'">'+opttext+'</option>';
+		    Resource.input.option(self.elem, arr[i], opttext);
 		}
-		$(this.id).append('<select>'+options+'</select>');
 		this.value = function () {
-		    return $(this.id +' select').val();
+		    return this.dataelem.val();
 		}
 	    }
 	    if(arr[0] == "checkbox") {
-		var options = "";
 		var maxlen = arr[2];
 		for(i=3;i<arr.length;i++) {
 		    var opttext;
@@ -611,13 +630,14 @@ function Param(containerid, n, definition) {
 			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
 		    else
 			opttext = arr[i];
-		    options = options + '<br>&nbsp;<input type="checkbox" value="'+arr[i]+'">'+opttext;
+		    self.dataelem = Resource.div(self.elem, function (div) {
+			Resource.input.checkbox(div, arr[i], opttext);
+		    });
 		}
-		$(this.id).append(options);
 		this.value = function () {
 		    var values;
 		    var val="";
-		    values = $(this.id +' input');
+		    values = this.dataelem.find('input');
 		    for(i=0;i<values.length;i++) {
 			if(values[i].checked) {
 			    if(val.length) val += ",";
@@ -636,13 +656,15 @@ function Param(containerid, n, definition) {
 			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
 		    else
 			opttext = arr[i];
-		    options = options + '<br>&nbsp;<input type="radio" name="'+this.container+this.n+'"value="'+arr[i]+'">'+opttext;
+		    self.dataelem = Resource.div(self.elem, function (div) {
+			Resource.input.radio(div, self.n, arr[i], opttext);
+		    });
+
 		}
-		$(this.id).append(options);
 		this.value = function () {
 		    var values;
 		    var val="";
-		    values = $(this.id +' input');
+		    values = this.dataelem.find('input');
 		    for(i=0;i<values.length;i++) {
 			if(values[i].checked) {
 			    if(val.length) val += ",";
@@ -656,8 +678,11 @@ function Param(containerid, n, definition) {
     }
 
     this.framework_create = function () {
-	if($(this.id).length == 0) {
-	    $('#'+this.container).append('<tr><td class="param" id="'+this.n+'">AAAA'+this.n+'</td></tr>');
+	var self=this;
+	if(!this.elem) {
+	    this.elem = Resource.table.row(self.parent, function (row) {
+		Resource.table.col(row, { class: 'param' }, 'AAAA'+self.n);
+	    });
 	}
     }
 
@@ -808,7 +833,7 @@ function Job(name) {
 	}
     }
     this.param_add = function () {
-	param = new Param("params_"+this.name, this.params.length+1, "Caption:");
+	param = new Param(this.elem, this.params.length+1, "Caption:");
 	if(this.edit) param.edit = 1;
 	this.params.push(param);
 	param.framework_create();
@@ -1028,7 +1053,7 @@ function Job(name) {
 	    }
 	}
 	if(param === undefined) {
-	    param = new Param("params_"+this.job.name, this.attr, text);
+	    param = new Param(this.elem, this.attr, text);
 	    this.job.params.push(param);
 	    param.framework_create();
 	}
