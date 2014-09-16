@@ -180,7 +180,7 @@ Resource.input.checkbox = function (appendtoelem, value) {
     var opt;
     opt = $('<input type="checkbox" value="'+value+'"/>').appendTo(appendtoelem);
     for(var i=2;i<arguments.length;i++) {
-        $('<span>'+arguments[i]+'</span>').appendTo(opt);
+        $('<span>'+arguments[i]+'</span>').appendTo(appendtoelem);
     }
     return opt;
 };
@@ -1042,9 +1042,9 @@ function Job(name) {
 	    logname = loginfo[0];
 	    logstatus = loginfo[1];
 	    if(logstatus == "r")
-		anim = '"running"';
+		anim = 'running';
 	    else
-		anim = '""';
+		anim = '';
 	    
 	    self.histelems[i] = Resource.div(self.histelem, function (div) {
 		Resource.tt(div, { class: anim }, logname);
