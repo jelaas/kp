@@ -40,13 +40,16 @@ _i18n = {};
 _i18n["Add parameter"] = '<span lang="sv">Ny parameter</span><span lang="en">Add parameter</span>';
 _i18n["Admin"] = '<span lang="sv">Administratör</span><span lang="en">Admin</span>';
 _i18n["Description"] = '<span lang="sv">Beskrivning</span><span lang="en">Description</span>';
+_i18n["file"] = '<span lang="sv">fil</span><span lang="en">file</span>';
+_i18n["Files"] = '<span lang="sv">Filer</span><span lang="en">Files</span>';
 _i18n["No"] = '<span lang="sv">Nej</span><span lang="en">No</span>';
 _i18n["Run"] = '<span lang="sv">Kör</span><span lang="en">Run</span>';
 _i18n["Roles"] = '<span lang="sv">Roller</span><span lang="en">Roles</span>';
 _i18n["roles"] = '<span lang="sv">roller</span><span lang="en">roles</span>';
 _i18n["Save"] = '<span lang="sv">Spara</span><span lang="en">Save</span>';
-_i18n["Tags"] = '<span lang="sv">Taggar</span><span lang="en">Tags</span>';
 _i18n["Serial"] = '<span lang="sv">Seriell</span><span lang="en">Serial</span>';
+_i18n["Tags"] = '<span lang="sv">Taggar</span><span lang="en">Tags</span>';
+_i18n["Upload"] = '<span lang="sv">Ladda upp</span><span lang="en">Upload</span>';
 _i18n["Yes"] = '<span lang="sv">Ja</span><span lang="en">Yes</span>';
 
 i18n.t = function (text) {
@@ -185,6 +188,13 @@ Resource.input.checkbox = function (appendtoelem, value) {
     return opt;
 };
 
+Resource.input.file = function (appendtoelem) {
+    var inp;
+    inp = $('<input type="file"/>').appendTo(appendtoelem);
+    Resource._args(inp, arguments, 1);
+    return inp;
+}
+
 Resource.input.option = function (appendtoelem, value) {
     /* Resource.input.option(elem, value, [text ..]) */
     var opt;
@@ -248,6 +258,13 @@ Resource.input.text = function (appendtoelem, label, options) {
     inp.appendTo(lbl);
     return inp;
 };
+
+Resource.label = function (appendtoelem) {
+    var lbl;
+    lbl = $('<label/>').appendTo(appendtoelem);
+    Resource._args(lbl, arguments, 1);
+    return lbl;
+}
 
 Resource.menu.create = function (elem, fn) {
     var menu = $('<table/>').appendTo(elem);
@@ -1008,22 +1025,35 @@ function Job(name) {
     }
 
     this.files_display = function () {
+	var self=this;
 	this.fileselem.empty();
 	if(this.edit) {
-	    $('#files_'+this.name).append('Files:<table>');
-	    for(i=0;i<this.files.length;i++) {
-		$('#files_'+this.name).append('<tr class="files"><td>'+this.files[i]+'</td><td><img WIDTH=18 HEIGHT=18 id="filedel_'+ this.name + '_' + i +'" src="'+baseurl+'close.png"></td></tr>');
-		$('#filedel_'+ this.name + '_' + i).click({ job: this, n: i }, function(event) {
-		    if(confirm("Delete file " + event.data.job.files[event.data.n] + "?")) {
-			event.data.job.ajax(baseurl + "_file/" + event.data.job.name + "/del/" + event.data.job.files[event.data.n] , event.data.job, event.data.job.read_files);
-		    }
+	    Resource.div(self.fileselem, "Files", ":");
+	    Resource.table.table(self.fileselem, function (tbl) {
+		for(i=0;i<self.files.length;i++) {
+		    Resource.table.row(tbl, { class: "files" }, function (row) {
+			Resource.table.col(row, self.files[i]);
+			Resource.table.col(row, function (td) {
+			    var elem = Resource.image(td, baseurl+'close.png', { width: 18, height: 18 } );
+			    elem.click({ job: self, n: i }, function(event) {
+				if(confirm("Delete file " + event.data.job.files[event.data.n] + "?")) {
+				    event.data.job.ajax(baseurl + "_file/" + event.data.job.name + "/del/" + event.data.job.files[event.data.n] , event.data.job, event.data.job.read_files);
+				}
+			    });
+			});
+		    });
+		}
+	    });
+
+	    var elem = Resource.form(self.fileselem);
+	    Resource.label(elem, "Upload"," ", "file",":", function (lbl) {
+		Resource.div(lbl, function (div) {
+		    self.fileelem = Resource.input.file(div, { name: "file" });
 		});
-	    }
-	    $('#files_'+this.name).append('</table>');
-	    $('#files_'+this.name).append('<form method="post" enctype="multipart/form-data"><label for="file">Upload file:</label><input type="file" name="file" id="file"><br><button type="button" name="submit">Upload</button></form>');
-	    $('#files_'+this.name+' button').click(this, function(event){
-		var fileInput = $('#files_'+event.data.name+' input')[0];
-		var file = fileInput.files[0];
+	    });
+	    Resource.button.click(elem, "submit", "Upload", self, function(event) {
+		var fileInput = event.data.fileelem;
+		var file = fileInput.prop('files')[0];
 		var formData = new FormData();
 		formData.append('file', file);
 		event.data.sendfile(formData, file.name);
