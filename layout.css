@@ -69,3 +69,10 @@ animation-direction: alternate;
 0%   {color: white;}
 100% {color: blue;}
 }
+
+body.en :lang(sv) {
+  display: none;
+}
+body.sv :lang(en) {
+  display: none;
+}

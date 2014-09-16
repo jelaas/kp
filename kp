@@ -26,6 +26,14 @@ if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",
   exit(0);
 }
 
+$lang="en";
+if(isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+  $l=$_SERVER["HTTP_ACCEPT_LANGUAGE"];       
+  if (filter_var($lang, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-_./a-z0-9]+$,")))) {
+    $lang=$l; 
+  }
+}
+
 if(!$root) {
   header("HTTP/1.1 500 Configuration error. KPHOME undefined.");
   header('Content-type: text/plain');
@@ -333,8 +341,8 @@ else
     }
     </style>
  </head>
- <body>
-<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>" nonce="<?=$nonce?>" createjob="<?=$createjob?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td id="createjob"></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
+ <body class="en">
+<table border=0 width=100%><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/user.png"> <b id="user" alang="<?=$lang?>" baseurl="<?=$baseurl?>" username="<?=$name?>" pathinfo="<?=$PI?>" nonce="<?=$nonce?>" createjob="<?=$createjob?>"><?=$name?></b><td align="left" class="name" id="roles"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/key.png"></td><td id="createjob"></td><td align="right" id="search"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/search.png"> [ ]</td><td align=right><a href="<?=$baseurl?>/_logout"><img WIDTH=18 HEIGHT=18 src="<?=$baseurl?>/logout.png"></a></td></tr></table>
 <hr/>
 <tt id="tags"></tt>
 <hr/>

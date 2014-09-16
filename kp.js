@@ -37,7 +37,16 @@ function ajax(url, context, callback) {
 // _i18n[""] = '<span lang="sv"></span><span lang="en"></span>';
 i18n = {};
 _i18n = {};
+_i18n["Add parameter"] = '<span lang="sv">Ny parameter</span><span lang="en">Add parameter</span>';
+_i18n["Admin"] = '<span lang="sv">Administratör</span><span lang="en">Admin</span>';
+_i18n["Description"] = '<span lang="sv">Beskrivning</span><span lang="en">Description</span>';
 _i18n["No"] = '<span lang="sv">Nej</span><span lang="en">No</span>';
+_i18n["Run"] = '<span lang="sv">Kör</span><span lang="en">Run</span>';
+_i18n["Roles"] = '<span lang="sv">Roller</span><span lang="en">Roles</span>';
+_i18n["roles"] = '<span lang="sv">roller</span><span lang="en">roles</span>';
+_i18n["Save"] = '<span lang="sv">Spara</span><span lang="en">Save</span>';
+_i18n["Tags"] = '<span lang="sv">Taggar</span><span lang="en">Tags</span>';
+_i18n["Serial"] = '<span lang="sv">Seriell</span><span lang="en">Serial</span>';
 _i18n["Yes"] = '<span lang="sv">Ja</span><span lang="en">Yes</span>';
 
 i18n.t = function (text) {
@@ -104,6 +113,7 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].maxlength) elem.attr("maxlength", args[i].maxlength);
             if(args[i].size) elem.attr("size", args[i].size);
             if(args[i].class) elem.addClass(args[i].class);
+	    if(args[i].nowrap) elem.css("white-space", "nowrap");
             continue;
         }
     }
@@ -233,6 +243,7 @@ Resource.input.text = function (appendtoelem, label, options) {
             maxlength+
             size+
             '>');
+    if(options.value) inp.attr("value", options.value);
     lbl = $('<label>'+i18n.t(label)+'</label>').appendTo(appendtoelem);
     inp.appendTo(lbl);
     return inp;
@@ -521,7 +532,7 @@ function Log(name) {
 		    });
 		    Resource.table.row(tbl, function (row) {
 			Resource.table.col(row, { colspan: 3 }, function (col) {
-			    self.dataelem = Resource.textarea(col, { readonly: true, class: 'log', wrap: 'off', cols: 40, rows: 35 });
+			    self.dataelem = Resource.textarea(col, { conv: false, readonly: true, class: 'log', wrap: 'off', cols: 40, rows: 35 });
 			});
 		    });
 		});
@@ -591,8 +602,9 @@ function Param(parent, n, definition) {
 	this.elem.empty();
 	
 	if(this.edit) {
-	    Resource.text(self.elem, 'Parameter '+this.n);
-	    self.dataelem = Resource.textarea(self.elem, { wrap: 'off', cols: 20, rows: 5 }, self.def);
+	    Resource.div(self.elem, 'Parameter '+this.n);
+	    self.dataelem = Resource.textarea(self.elem, { conv: false, wrap: 'off', cols: 20, rows: 5 });
+	    self.dataelem.val(self.def);
 	    self.value = function () {
 		return self.dataelem.val();
 	    };
@@ -781,7 +793,6 @@ function Job(name) {
 	this.nameelem.empty();
 	if(this.edit) {
 	    var elem = Resource.input.text(this.nameelem, '', { value: this.nicename });
-	    this.nameelem.append('<input type="text" value="'+this.nicename+'">');
 	    this.nicename_value = function () {
 		return elem.val();
             }
@@ -792,50 +803,61 @@ function Job(name) {
     this.roles_display = function () {
 	this.roleselem.empty();
 	if(this.edit) {
-	    this.roleselem.append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
+	    Resource.div(this.roleselem, 'Roles',':');
+	    var elem = Resource.textarea(this.roleselem, { conv: false, cols: 10, rows: 5 });
+	    elem.val(this.roles);
 	    this.roles_value = function () {
-		return this.roleselem.find('textarea').val();
+		return elem.val();
 	    }
 	}
     }
     this.adminroles_display = function () {
 	this.admroleelem.empty();
 	if(this.edit) {
-	    $('#adminroles_'+this.name).append('Admin roles:<br><textarea  cols=10 rows=5>'+this.adminroles+'</textarea>');
+	    Resource.div(this.roleselem, 'Admin',' ','roles',':');
+	    var elem = Resource.textarea(this.roleselem, { cols: 10, rows: 5 });
+	    elem.val(this.adminroles);
 	    this.adminroles_value = function () {
-		return $('#adminroles_'+this.name+' textarea').val();
+		return elem.val();
 	    }
 	}
     }
     this.tags_display = function () {
 	this.tagselem.empty();
 	if(this.edit) {
-	    $('#tags_'+this.name).append('Tags:<br><textarea  cols=10 rows=5>'+this.tags+'</textarea>');
+	    Resource.div(this.tagselem, 'Tags',':');
+	    var elem = Resource.textarea(this.tagselem, { cols: 10, rows: 5 });
+	    elem.val(this.tags);
 	    this.tags_value = function () {
-		return $('#tags_'+this.name+' textarea').val();
+		return elem.val();
 	    }
 	}
     }
     this.serial_display = function () {
+	var self=this;
 	this.serialelem.empty();
 	if(this.edit) {
-	    if(this.serial == 'yes')
-		$('#serial_'+this.name).append('serial:<br><input type="checkbox" value="'+this.serial+'" checked>');
-	    else
-		$('#serial_'+this.name).append('serial:<br><input type="checkbox" value="'+this.serial+'">');
-	    this.serial_value = function () {
-		values = $('#serial_'+this.name+' input');
-		if(values[0].checked) return 'yes';
-		return 'no';
-	    }
+	    Resource.div(this.serialelem, 'Serial',':', function (div) {
+		var elem = Resource.input.checkbox(div, this.serial);
+		if(this.serial == "yes")
+		    elem.prop('checked', true);
+		else
+		    elem.prop('checked', false);
+		self.serial_value = function () {
+		    if(elem.checked) return 'yes';
+		    return 'no';
+		}
+	    });
 	}
     }
     this.description_display = function () {
 	this.descelem.empty();
 	if(this.edit) {
-	    $('#description_'+this.name).append('Description:<br><textarea  cols=60 rows=15>'+this.description+'</textarea>');
+	    Resource.div(this.descelem, 'Description',':');
+	    var elem = Resource.textarea(this.descelem, { cols: 60, rows: 15 });
+	    elem.val(this.description);
 	    this.description_value = function () {
-		return $('#description_'+this.name+' textarea').val();
+		return elem.val();
 	    };
 	} else {
 	    this.descelem.append(this.description);
@@ -856,8 +878,7 @@ function Job(name) {
 	}
 	if(this.edit) {
 	    if(!this.paramaddelem) {
-		this.paramelem.append('<button type="button" id="paramadd_'+this.name+'">Add parameter</button>');
-		$('#paramadd_'+this.name).click(this, function(event) {
+		this.paramaddelem = Resource.button.click(this.paramelem, "addparam", "Add parameter", this, function (event) {
 		    event.data.param_add();
 		});
 	    }
@@ -885,8 +906,8 @@ function Job(name) {
 	this.read();
     }
     this.delete_cb = function (text,status,xhr) {
-	$('#job_'+this.name).remove();
-	$('#jobdata_'+this.name).remove();
+	this.elem.remove();
+	this.jobdataelem.remove();
 	jobs[this.name] = undefined;
 	if(this.timer != undefined) clearInterval(this.timer);
     }
@@ -898,12 +919,14 @@ function Job(name) {
     this.run_display = function () {
 	this.runelem.empty();
 	if(this.edit) {
-	    $('#run_'+this.name).append('Script<br><textarea  cols=60 rows=15>'+this.run+'</textarea>');
-	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Save</button>');
+	    Resource.div(this.runelem, 'Script:');
+	    var elem = Resource.textarea(this.runelem, { cols: 60, rows: 15 });
+	    elem.val(this.run);
 	    this.run_value = function () {
-		return $('#run_'+this.name+' textarea').val();
+		return elem.val();
 	    };
-	    $('#runlink_'+this.name).click(this, function(event) {
+	    
+	    Resource.button.click(this.runelem, "save", "Save", this, function (event) {
 		var params = {};
 		var i;
 		params['nicename'] = event.data.nicename_value();
@@ -946,16 +969,13 @@ function Job(name) {
     this.edit_display = function () {
 	this.editelem.empty();
 	if(this.edit) {
-	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+
-					    baseurl+'close.png">'+
-					    '&nbsp;&nbsp;&nbsp;<img WIDTH=18 HEIGHT=22 id="jobdelete_'+this.name+'" src="'+
-					    baseurl+'trashcan.png">'
-					   );
-	    $('#jobeditmode_'+this.name).click(this, function(event) {
-		event.data.editmode(0);
-		event.data.display();
-	    });
-	    $('#jobdelete_'+this.name).click(this, function(event) {
+	    var elem = Resource.image(this.editelem, baseurl+'close.png', { width: 18, height: 18 });
+	    elem.click(this, function(event) {
+                event.data.editmode(0);
+                event.data.display();
+            });
+	    elem = Resource.image(this.editelem, baseurl+'trashcan.png', { width: 18, height: 22 });
+	    elem.click(this, function(event) {
 		if(event.data.justcreated == 1) {
 		    event.data.delete_cb();
 		} else {
@@ -1322,7 +1342,8 @@ function gotlist(text) {
 
 function gotroles(text) {
     $("#roles").empty();
-    $("#roles").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'key.png">' + text);
+    Resource.image($("#roles"), baseurl+'key.png', { width: 18, height: 18 });
+    Resource.text($("#roles"), text);
     roles = text.split('\n');
 }
 
@@ -1332,7 +1353,7 @@ function gottags(text) {
 
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
 
-    $("#tags").append("Tags: ");
+    Resource.text($("#tags"),"Tags",": ");
 
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
@@ -1352,6 +1373,16 @@ function gottags(text) {
 }
 
 $(function () {
+    // i18n: el cheapo
+    lang = $("#user").attr("alang");
+    langs = lang.split(',');
+    for(i=0;i<langs.length;i++) {
+        if(langs[i].indexOf("sv") == 0) {
+	    document.body.className = "sv";
+            break;
+        }
+    }
+
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
