@@ -1,7 +1,7 @@
 /*
  * Implements the javascript frontend of 'kp'.
  *
- * Copyright: Jens Låås, UU 2012
+ * Copyright: Jens Låås, UU 2012-2014
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
 var baseurl, username, pathinfo, nonce;
@@ -1442,7 +1442,7 @@ $(function () {
 	    job.roles = roles.join('\n');
 	    job.adminroles = roles[0];
 	    job.run = '';
-	    job.tags = '';
+	    job.tags = 'new';
 	    job.display();
 	});
     }
