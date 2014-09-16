@@ -100,6 +100,7 @@ Resource.__args = function (cb, elem, args, start) {
 	    if(args[i].readonly) elem.attr('readonly','readonly');
             if(args[i].colspan) elem.attr("colspan", args[i].colspan);
             if(args[i].name) elem.attr("name", args[i].name);
+            if(args[i].valign) elem.attr("valign", args[i].valign);
             if(args[i].maxlength) elem.attr("maxlength", args[i].maxlength);
             if(args[i].size) elem.attr("size", args[i].size);
             if(args[i].class) elem.addClass(args[i].class);
@@ -396,6 +397,12 @@ Resource.textarea = function (appendtoelem) {
     return ta;
 };
 
+Resource.tt = function (appendtoelem) {
+    var tt = $('<tt/>').appendTo(appendtoelem);
+    Resource._args(tt, arguments, 1);
+    return tt;
+};
+
 
 /*
   log object constructor.
@@ -578,7 +585,7 @@ function Param(parent, n, definition) {
 	cp.edit = this.edit;
 	return cp;
     }
-
+    
     this.display = function () {
 	var self=this;
 	this.elem.empty();
@@ -602,7 +609,7 @@ function Param(parent, n, definition) {
 		var dispsize = 8;
 		if(arr.length >= 2) maxlen = arr[2];
 		if(arr.length >= 3) dispsize = arr[3];
-		self.dataelem = Resource.input.text(self.elem, "label", { maxlength: maxlen, size: dispsize });
+		self.dataelem = Resource.input.text(self.elem, '', { maxlength: maxlen, size: dispsize });
 		self.value = function () {
 		    return this.dataelem.val();
 		}
@@ -616,7 +623,7 @@ function Param(parent, n, definition) {
 			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
 		    else
 			opttext = arr[i];
-		    Resource.input.option(self.elem, arr[i], opttext);
+		    Resource.input.option(self.dataelem, arr[i], opttext);
 		}
 		this.value = function () {
 		    return this.dataelem.val();
@@ -676,12 +683,12 @@ function Param(parent, n, definition) {
 	    }
 	}
     }
-
+    
     this.framework_create = function () {
 	var self=this;
 	if(!this.elem) {
-	    this.elem = Resource.table.row(self.parent, function (row) {
-		Resource.table.col(row, { class: 'param' }, 'AAAA'+self.n);
+	    Resource.table.row(self.parent, function (row) {
+		self.elem = Resource.table.col(row, { class: 'param' }, 'AAAA'+self.n);
 	    });
 	}
     }
@@ -708,6 +715,7 @@ function Job(name) {
     
     jobs[name] = this;
     
+    this.histelems = [];
     this.edit = 0;
     this.name = name;
     this.nicename = name;
@@ -770,27 +778,28 @@ function Job(name) {
 	});
     };
     this.nicename_display = function () {
-	$('#jobname_'+this.name).empty();
+	this.nameelem.empty();
 	if(this.edit) {
-	    $('#jobname_'+this.name).append('<input type="text" value="'+this.nicename+'">');
+	    var elem = Resource.input.text(this.nameelem, '', { value: this.nicename });
+	    this.nameelem.append('<input type="text" value="'+this.nicename+'">');
 	    this.nicename_value = function () {
-		return $('#jobname_'+this.name+' input').val();
+		return elem.val();
             }
 	    return;
 	}
-	$('#jobname_'+this.name).append(this.nicename);
+	this.nameelem.append(this.nicename);
     }
     this.roles_display = function () {
-	$('#roles_'+this.name).empty();
+	this.roleselem.empty();
 	if(this.edit) {
-	    $('#roles_'+this.name).append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
+	    this.roleselem.append('Roles:<br><textarea  cols=10 rows=5>'+this.roles+'</textarea>');
 	    this.roles_value = function () {
-		return $('#roles_'+this.name+' textarea').val();
+		return this.roleselem.find('textarea').val();
 	    }
 	}
     }
     this.adminroles_display = function () {
-	$('#adminroles_'+this.name).empty();
+	this.admroleelem.empty();
 	if(this.edit) {
 	    $('#adminroles_'+this.name).append('Admin roles:<br><textarea  cols=10 rows=5>'+this.adminroles+'</textarea>');
 	    this.adminroles_value = function () {
@@ -799,7 +808,7 @@ function Job(name) {
 	}
     }
     this.tags_display = function () {
-	$('#tags_'+this.name).empty();
+	this.tagselem.empty();
 	if(this.edit) {
 	    $('#tags_'+this.name).append('Tags:<br><textarea  cols=10 rows=5>'+this.tags+'</textarea>');
 	    this.tags_value = function () {
@@ -808,7 +817,7 @@ function Job(name) {
 	}
     }
     this.serial_display = function () {
-	$('#serial_'+this.name).empty();
+	this.serialelem.empty();
 	if(this.edit) {
 	    if(this.serial == 'yes')
 		$('#serial_'+this.name).append('serial:<br><input type="checkbox" value="'+this.serial+'" checked>');
@@ -822,18 +831,18 @@ function Job(name) {
 	}
     }
     this.description_display = function () {
-	$('#description_'+this.name).empty();
+	this.descelem.empty();
 	if(this.edit) {
 	    $('#description_'+this.name).append('Description:<br><textarea  cols=60 rows=15>'+this.description+'</textarea>');
 	    this.description_value = function () {
 		return $('#description_'+this.name+' textarea').val();
 	    };
 	} else {
-	    $('#description_'+this.name).append(this.description);
+	    this.descelem.append(this.description);
 	}
     }
     this.param_add = function () {
-	param = new Param(this.elem, this.params.length+1, "Caption:");
+	param = new Param(this.paramelem, this.params.length+1, "Caption:");
 	if(this.edit) param.edit = 1;
 	this.params.push(param);
 	param.framework_create();
@@ -846,27 +855,30 @@ function Job(name) {
 	    this.params[i].display();
 	}
 	if(this.edit) {
-	    if($('#paramadd_'+this.name).length == 0) {
-		$("#params_"+this.name).append('<button type="button" id="paramadd_'+this.name+'">Add parameter</button>');
+	    if(!this.paramaddelem) {
+		this.paramelem.append('<button type="button" id="paramadd_'+this.name+'">Add parameter</button>');
 		$('#paramadd_'+this.name).click(this, function(event) {
 		    event.data.param_add();
 		});
 	    }
 	} else {
-	    $('#paramadd_'+this.name).remove();
+	    if(this.paramaddelem) {
+		this.paramaddelem.remove();
+		this.paramaddelem = undefined;
+	    }
 	}
     }
     this.message_display = function (msg) {
-	$('#msg_'+this.name).empty();
-	$('#msg_'+this.name).append('<b>'+msg+'</b>');
+	this.messageelem.empty();
+	Resource.text(this.messageelem, msg); // FIXME bold
     }
 
     this.run_cb = function (text,status,xhr) {
-	$('#msg_'+this.name).empty();
+	this.messageelem.empty();
 	if(text.length > 8) new Log(text);
     }
     this.update_cb = function (text,status,xhr) {
-	$('#msg_'+this.name).empty();
+	this.messageelem.empty();
 	this.editmode(0);
 	this.justcreated = 0;
 	this.display();
@@ -884,7 +896,7 @@ function Job(name) {
     }
     
     this.run_display = function () {
-	$('#run_'+this.name).empty();
+	this.runelem.empty();
 	if(this.edit) {
 	    $('#run_'+this.name).append('Script<br><textarea  cols=60 rows=15>'+this.run+'</textarea>');
 	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Save</button>');
@@ -913,8 +925,7 @@ function Job(name) {
 				params);
 	    });
 	} else {
-	    $('#run_'+this.name).append('<button type="button" id="runlink_'+this.name+'">Run</button>');
-	    $('#runlink_'+this.name).click(this, function(event) {
+	    Resource.button.click(this.runelem, "run", "Run", this, function(event) {
 		var postparams = {};
 		var i;
 		for(i=0;i<event.data.params.length;i++) {
@@ -933,7 +944,7 @@ function Job(name) {
     }
 
     this.edit_display = function () {
-	$('#jobedit_'+this.name).empty();
+	this.editelem.empty();
 	if(this.edit) {
 	    $('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+
 					    baseurl+'close.png">'+
@@ -959,8 +970,8 @@ function Job(name) {
 	    });
 	} else {
 	    if(this.admin == "1" || this.justcreated == 1) {
-		$('#jobedit_'+this.name).append('<img WIDTH=18 HEIGHT=18 id="jobeditmode_'+this.name+'" src="'+baseurl+'pencil.png">');
-		$('#jobeditmode_'+this.name).click(this, function(event) {
+		var elem = Resource.image(this.editelem, baseurl+'pencil.png', { width: 18, height: 18 });
+		elem.click(this, function(event) {
 		    event.data.editmode(1);
 		    event.data.display();
 		    event.data.message_display('');
@@ -977,7 +988,7 @@ function Job(name) {
     }
 
     this.files_display = function () {
-	$('#files_'+this.name).empty();
+	this.fileselem.empty();
 	if(this.edit) {
 	    $('#files_'+this.name).append('Files:<table>');
 	    for(i=0;i<this.files.length;i++) {
@@ -1003,29 +1014,34 @@ function Job(name) {
     this.history_display = function () {
 	var i, elem, anim;
 	var loginfo, logname, logstatus;
+	var self=this;
 
-	$('#history_'+this.name).empty();
+	this.histelem.empty();
 	for(i=0;i<this.logs.length;i++) {
 	    loginfo = this.logs[i].split(' ');
 	    logname = loginfo[0];
 	    logstatus = loginfo[1];
 	    if(logstatus == "r")
-		anim = 'class="running"';
+		anim = '"running"';
 	    else
-		anim = "";
-	    elem = $('#history_'+this.name).append('<tt '+anim+' id="hist_'+this.name+'_'+i+'">'+logname+"<br></tt>");
+		anim = '""';
+	    
+	    self.histelems[i] = Resource.div(self.histelem, function (div) {
+		Resource.tt(div, { class: anim }, logname);
+	    });
+	    
 	    if(logstatus == "0")
-		$('#hist_'+this.name+'_'+i).css("background-color","lightgreen");
+		self.histelems[i].css("background-color","lightgreen");
             else {
 		if(logstatus != "r")
-		    $('#hist_'+this.name+'_'+i).css("background-color","#faa");
+		    self.histelems[i].css("background-color","#faa");
 	    }
 	    
-	    $('#hist_'+this.name+'_'+i).click(logname, function(event) {
+	    self.histelems[i].click(logname, function(event) {
 		new Log(event.data);
 	    });
 
-	    $('#hist_'+this.name+'_'+i).on("mouseover mouseout", function(event) {
+	    self.histelems[i].on("mouseover mouseout", function(event) {
 		if (event.type == 'mouseover') {
 		    if($(this).data('mflag') != '1') {
 			$(this).data('bgcolor', $(this).css('background-color'));
@@ -1042,6 +1058,7 @@ function Job(name) {
 	}
     }
 
+    // this is structure object with members job and attr
     this.param_cb = function (text,status,xhr) {
 	var param;
 	this.job.ajax(baseurl + "_exe/" + this.job.name + "/param" + (this.attr +1), { job: this.job, attr: (this.attr+1) }, this.job.param_cb);
@@ -1053,7 +1070,7 @@ function Job(name) {
 	    }
 	}
 	if(param === undefined) {
-	    param = new Param(this.elem, this.attr, text);
+	    param = new Param(this.job.paramelem, this.attr, text);
 	    this.job.params.push(param);
 	    param.framework_create();
 	}
@@ -1098,13 +1115,13 @@ function Job(name) {
     this.history_cb = function (text,status,xhr) {
 	if(this.logs) {
 	    for(i=0;i<this.logs.length;i++) {
-		$('#hist_'+this.name+'_'+i).off('click mouseover mouseout');
+		this.histelems[i].off('click mouseover mouseout');
 	    }
 	}
 	this.logs = text.split('\n').filter(function (e) {if(e.length >0) return true;return false;});
 	this.history_display();
     }
-
+    
     this.files_cb = function (text,status,xhr) {
 	this.files = text.split('\n').filter(function (e) {if(e.length >0) return true;return false;});
 	this.files_display();
@@ -1173,7 +1190,7 @@ function Job(name) {
 	    
 	    /* copy params */
 	    for(i=0;i<src.params.length;i++) {
-		this.params.unshift(src.params[i].copy("params_"+this.name, i+1));
+		this.params.unshift(src.params[i].copy(this.paramelem, i+1));
 	    }
 	    
 	    /* display params */
@@ -1186,64 +1203,88 @@ function Job(name) {
     }
     
     this.framework_create = function () {
-	if ($('#job_'+this.name).length == 0) {
-	    $('#items').append('<tr class="jobrow" id="job_' +
-			       this.name +
-			       '"><td COLSPAN=2>' +
-			       '<img WIDTH=18 HEIGHT=18 id="jobtoggle_'+this.name+'" src="'+baseurl+'plus.png">&nbsp;' +
-			       '<span draggable="true" class="name" id="jobname_' + this.name + '">'+this.name+'</span>&nbsp;' +
-			       '<span class="name" id="jobedit_' + this.name + '"></span>&nbsp;' +
-			       '</td>' +
-			       '</tr><tr class="jobrow" id="jobdata_' +
-			       this.name + '">' +
-			       '<td valign=top><table border="0">' + 
-			       '<tr><td class="desc" id="description_' + this.name + '"></td></tr>' +
-			       '<tr><td id="adminroles_' + this.name + '"></td></tr>' +
-			       '<tr><td id="roles_' + this.name + '"></td></tr>' +
-			       '<tr><td id="tags_' + this.name + '"></td></tr>' +
-			       '<tr><td id="serial_' + this.name + '"></td></tr>' +
-			       '</table></td>' +
-			       '<td valign=top NOWRAP><table border="0" id="params_'+this.name+'"></table>' + 
-			       '<table border="0">' + 
-			       '<tr><td class="message" id="msg_' + this.name + '"></td></tr>' +
-			       '</table></td>' +
-			       '<td valign=top ><table border="0">' + 
-			       '<tr><td valign=top id="files_' + this.name + '"></td></tr>' +
-			       '<tr><td valign=top class="run" id="run_' + this.name + '"></td></tr>' +
-			       '</table></td>' +
-			       '<td valign=top class="history" id="history_' + this.name + '">logg historik</td>' +
-			       '</tr>');
+	var self = this;
+	if (!this.elem) {
+	    this.elem = Resource.table.row($('#items'), { class: "jobrow" }, function (row) {
+		Resource.table.col(row, { colspan: 2 }, function (col) {
+		    Resource.image(col, baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
+                        img.click(self, function (event) {
+                            event.data.jobdataelem.toggle(30);
+			    if(localStorage[event.data.name+'.'+'hide'] == 1)
+				localStorage[event.data.name+'.'+'hide'] = 0;
+			    else
+				localStorage[event.data.name+'.'+'hide'] = 1;
+                        });
+                    });
+		    self.nameelem = Resource.span(col, { draggable: true, class: "name" }, self.name);
+		    self.editelem = Resource.span(col, { class: "name" }, self.name);
+		});
+		self.jobdataelem = Resource.table.row($('#items'), { class: "jobrow" }, function (row) {
+		    Resource.table.col(row, { valign: "top" }, function (col) {
+			Resource.table.table(col, { border: 0 }, function (tbl) {
+			    Resource.table.row(tbl, function (row) {
+				self.descelem = Resource.table.col(row, { class: "desc" });
+			    });
+			    Resource.table.row(tbl, function (row) {
+				self.admroleelem = Resource.table.col(row);
+			    });
+			    Resource.table.row(tbl, function (row) {
+				self.roleselem = Resource.table.col(row);
+			    });
+			    Resource.table.row(tbl, function (row) {
+				self.tagselem = Resource.table.col(row);
+			    });
+			    Resource.table.row(tbl, function (row) {
+				self.serialelem = Resource.table.col(row);
+			    });
+			});
+		    });
+		    Resource.table.col(row, { valign: "top", nowrap: true }, function (col) {
+			self.paramelem = Resource.table.table(col, { border: 0 });
+			Resource.table.table(col, { border: 0 }, function (tbl) {
+			    Resource.table.row(tbl, function (row) {
+				self.messageelem = Resource.table.col(row, { class: "message" });
+				});
+			});
+		    });
+		    Resource.table.col(row, { valign: "top" }, function (col) {
+			Resource.table.table(col, { border: 0 }, function (tbl){
+			    Resource.table.row(tbl, function (row) {
+                                self.fileselem = Resource.table.col(row, { valign: "top" });
+                            });
+			    Resource.table.row(tbl, function (row) {
+                                self.runelem = Resource.table.col(row, { class: "run", valign: "top" });
+                            });
+			});
+		    });
+		    self.histelem = Resource.table.col(row, { valign: "top", class: "history" }, "logg historik");
+		});
+	    });
+	    
 	    var job = this;
-	    $('#jobname_'+this.name).bind('dragstart', function(event) {
+	    self.nameelem.bind('dragstart', function(event) {
 		/* use variable, since bind's this is the global context */
 		event.originalEvent.dataTransfer.setData("text/plain",job.name);
 	    });
-	    $('#jobname_'+this.name).bind('dragover', function(event) {
+	    self.nameelem.bind('dragover', function(event) {
 		event.originalEvent.stopPropagation();
 		event.originalEvent.preventDefault();
 	    });
-	    $('#jobname_'+this.name).bind('dragenter', function(event) {
+	    self.nameelem.bind('dragenter', function(event) {
 		event.originalEvent.stopPropagation();
 		event.originalEvent.preventDefault();
 	    });
-	    $('#jobname_'+this.name).bind('drop', function(event) {
+	    self.nameelem.bind('drop', function(event) {
 		event.originalEvent.stopPropagation();
 		event.originalEvent.preventDefault();
 		job.drop(event.originalEvent.dataTransfer.getData("text/plain"));
 	    });
-	    $('#jobtoggle_'+this.name).click(this, function(event) {
-                $('#jobdata_'+event.data.name).toggle(30);
-		if(localStorage[event.data.name+'.'+'hide'] == 1)
-		    localStorage[event.data.name+'.'+'hide'] = 0;
-		else
-		    localStorage[event.data.name+'.'+'hide'] = 1;
-            });
 	    if(localStorage[this.name+'.'+'hide'] === undefined) {
-		$('#jobdata_'+this.name).hide();
+		self.jobdataelem.hide();
 		localStorage[this.name+'.'+'hide'] = 1;
 	    } else {
 		if(localStorage[this.name+'.'+'hide'] == 0)
-		    $('#jobdata_'+this.name).hide();
+		    self.jobdataelem.hide();
 	    }
 	}
     }
