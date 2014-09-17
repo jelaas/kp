@@ -119,6 +119,7 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].class) elem.addClass(args[i].class);
 	    if(args[i].nowrap) elem.css("white-space", "nowrap");
 	    if(args[i].bold) elem.css("font-weight","Bold");
+	    if(args[i].tt) elem.css("font-family", "monospace");
             continue;
         }
     }
