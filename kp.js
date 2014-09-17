@@ -105,6 +105,7 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].border) elem.attr("border", args[i].border);
             if(args[i].id) elem.attr("id", args[i].id);
             if(args[i].cols) elem.attr("cols", args[i].cols);
+            if(args[i].draggable) elem.attr("draggable", "true");
             if(args[i].rows) elem.attr("rows", args[i].rows);
             if(args[i].wrap) elem.attr("wrap", args[i].wrap);
             if(args[i].width) elem.attr("width", args[i].width);
@@ -117,6 +118,7 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].size) elem.attr("size", args[i].size);
             if(args[i].class) elem.addClass(args[i].class);
 	    if(args[i].nowrap) elem.css("white-space", "nowrap");
+	    if(args[i].bold) elem.css("font-weight","Bold");
             continue;
         }
     }
@@ -908,7 +910,7 @@ function Job(name) {
     }
     this.message_display = function (msg) {
 	this.messageelem.empty();
-	Resource.text(this.messageelem, msg); // FIXME bold
+	Resource.span(this.messageelem, { bold: true }, msg);
     }
 
     this.run_cb = function (text,status,xhr) {
@@ -1224,11 +1226,11 @@ function Job(name) {
 	var src, i;
 	src = jobs[data];
 	if(this.edit) {
-	    $('#description_'+this.name+' textarea').val(src.description);
-	    $('#adminroles_'+this.name+' textarea').val(src.adminroles);
-	    $('#roles_'+this.name+' textarea').val(src.roles);
-	    $('#tags_'+this.name+' textarea').val(src.tags);
-	    $('#run_'+this.name+' textarea').val(src.run);
+	    this.descelem.find('textarea').val(src.description);
+	    this.admroleelemfind('textarea').val(src.adminroles);
+	    this.roleelem.find('textarea').val(src.roles);
+	    this.tagselem.find('textarea').val(src.tags);
+	    this.runelem.find('textarea').val(src.run);
 	    /* remove params */
 	    if(this.params_backup === undefined) {
 		this.params_backup = this.params;
@@ -1380,6 +1382,7 @@ function gotroles(text) {
 function gottags(text) {
     var arr = text.split('\n');
     var curtags = pathinfo.split('/');
+    var link, path, pathv, selected;
 
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
 
@@ -1387,10 +1390,12 @@ function gottags(text) {
 
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
+	selected = false;
 	if($.inArray(arr[i], curtags) >= 0) {
 	    pathv = curtags.filter(function (e) {if(e == arr[i]) return false;return true;});
 	    path = pathv.join('/');
-	    linkname = "<b>"+arr[i]+"</b>";
+	    linkname = arr[i];
+	    selected = true;
 	} else {
 	    if(pathinfo.length > 1)
 		path = pathinfo.substr(1) + "/" + arr[i];
@@ -1398,7 +1403,9 @@ function gottags(text) {
 		path = arr[i];
 	    linkname = arr[i];
 	}
-	$("#tags").append('<a href="'+baseurl+"kp/"+path+'">'+linkname+'</a> ');
+	Resource.link($("#tags"), baseurl+"kp/"+path, function(link) {
+	    Resource.span(link, { bold: selected }, linkname);
+	});
     }
 }
 
