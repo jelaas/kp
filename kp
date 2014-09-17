@@ -17,13 +17,14 @@ $KPCASSERVICE=$_SERVER["KPCASSERVICE"];
 $SERVICE=$KPCASSERVICE.$PI;
 $KPSECRETS=$_SERVER["KPSECRETS"];
 
-
-if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-_./a-z0-9]+$,")))) {
-  kp_log($root, "invalid PATH_INFO");
-  header("HTTP/1.1 403 Invalid PATH");
-  header('Content-type: text/plain');
-  print "Invalid PATH.";
-  exit(0);
+if(strlen($PI)) {
+  if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-_./a-z0-9]+$,")))) {
+    kp_log($root, "invalid PATH_INFO: ".$PI);
+    header("HTTP/1.1 403 Invalid PATH");
+    header('Content-type: text/plain');
+    print "Invalid PATH.";
+    exit(0);
+ }
 }
 
 $lang="en";
@@ -245,6 +246,11 @@ if($sesid == "invalid") {
     $ch = curl_init ("$CASURL/validate?service=".$SERVICE."&ticket=$ticket");
     curl_setopt ($ch, CURLOPT_HEADER, 0);
     curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
+
+    if(isset($_SERVER["KPUNSECURE"])) {
+      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    }
     
     $result=curl_exec ($ch);
     if($result === FALSE) {
