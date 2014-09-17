@@ -834,8 +834,8 @@ function Job(name) {
     this.adminroles_display = function () {
 	this.admroleelem.empty();
 	if(this.edit) {
-	    Resource.div(this.roleselem, 'Admin',' ','roles',':');
-	    var elem = Resource.textarea(this.roleselem, { cols: 10, rows: 5 });
+	    Resource.div(this.admroleelem, 'Admin',' ','roles',':');
+	    var elem = Resource.textarea(this.admroleelem, { cols: 10, rows: 5 });
 	    elem.val(this.adminroles);
 	    this.adminroles_value = function () {
 		return elem.val();
@@ -1228,8 +1228,8 @@ function Job(name) {
 	src = jobs[data];
 	if(this.edit) {
 	    this.descelem.find('textarea').val(src.description);
-	    this.admroleelemfind('textarea').val(src.adminroles);
-	    this.roleelem.find('textarea').val(src.roles);
+	    this.admroleelem.find('textarea').val(src.adminroles);
+	    this.roleselem.find('textarea').val(src.roles);
 	    this.tagselem.find('textarea').val(src.tags);
 	    this.runelem.find('textarea').val(src.run);
 	    /* remove params */
