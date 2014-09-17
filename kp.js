@@ -1419,6 +1419,10 @@ $(function () {
 	    document.body.className = "sv";
             break;
         }
+        if(langs[i].indexOf("en") == 0) {
+	    document.body.className = "en";
+            break;
+        }
     }
 
     baseurl = $("#user").attr("baseurl") + "/";
