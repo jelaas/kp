@@ -10,7 +10,7 @@ PHP.ini
 
 PHP used must have PCNTL support.
 
-Below are the PHP optios I know must be set (pick your own timezone obviously):
+Below are the PHP options I know must be set (pick your own timezone obviously) in php.ini:
  short_open_tag = On
  date.timezone = "Europe/Stockholm";
 
@@ -30,7 +30,7 @@ Apache config
     <Files "kp">
     	      SetHandler cgi-script
     </Files>
-    <Files ~ "^_(exe|auth|view|tags|log|logout)$">
+    <Files ~ "^_(exe|auth|view|tags|log|logout|file)$">
     	      SetHandler cgi-script
     </Files>
 </Directory>
