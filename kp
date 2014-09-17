@@ -111,7 +111,7 @@ if(!file_exists($root."/run")) {
 }
 
 # Check for existence of saferun mountpoint
-if(isset($_SERVER["KPSANDBOX"]))
+if(isset($_SERVER["KPSANDBOX"])) {
   if($_SERVER["KPSANDBOX"] == 'yes') {
     if(!file_exists($root."/saferun")) {
       header("HTTP/1.1 500 Configuration error. $root/saferun mountpoint");
@@ -120,6 +120,17 @@ if(isset($_SERVER["KPSANDBOX"]))
       exit(0);
     }
   }
+} else {
+  # Check that the run directory is writable by kp user.
+  $dir = $root."/run";
+  if(is_writable($dir) === FALSE) {
+    header("HTTP/1.1 500 Configuration error. $root/run not writable");
+    header('Content-type: text/plain');
+    print "Configuration error. $root/run not writable";
+    kp_log($root, "Configuration error. $root/run not writable");
+    exit(0);
+  }
+}
 
 /* 
  * Used to store per job secrets, that are only available to a specific job.
