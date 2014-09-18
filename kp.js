@@ -858,13 +858,13 @@ function Job(name) {
 	this.serialelem.empty();
 	if(this.edit) {
 	    Resource.div(this.serialelem, 'Serial',':', function (div) {
-		var elem = Resource.input.checkbox(div, this.serial);
-		if(this.serial == "yes")
+		var elem = Resource.input.checkbox(div, self.serial);
+		if(self.serial == "yes")
 		    elem.prop('checked', true);
 		else
 		    elem.prop('checked', false);
 		self.serial_value = function () {
-		    if(elem.checked) return 'yes';
+		    if(self.serialelem.find('input')[0].checked) return 'yes';
 		    return 'no';
 		}
 	    });
@@ -1367,6 +1367,7 @@ function Job(name) {
 function gotlist(text) {
     var arr = text.split('\n');
     
+    arr.sort();
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
 	new Job(arr[i]);
@@ -1391,6 +1392,7 @@ function gottags(text) {
 
     for(i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
+	arr.sort();
 	selected = false;
 	if($.inArray(arr[i], curtags) >= 0) {
 	    pathv = curtags.filter(function (e) {if(e == arr[i]) return false;return true;});
@@ -1407,6 +1409,7 @@ function gottags(text) {
 	Resource.link($("#tags"), baseurl+"kp/"+path, function(link) {
 	    Resource.span(link, { bold: selected }, linkname);
 	});
+	Resource.text($("#tags"), " ");
     }
 }
 
