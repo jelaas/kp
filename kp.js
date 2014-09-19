@@ -1516,7 +1516,7 @@ $(function () {
 	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'blueplus.png" id="createbutton">');
 	$('#createbutton').click(this, function(event) {
 	    var d = new Date();
-	    job=new Job(username+'-'+Math.round((d.getTime()/1000)-1363361021));
+	    var job = new Job(username+'-'+Math.round((d.getTime()/1000)-1363361021));
 	    job.edit = 1;
 	    job.justcreated = 1;
 	    job.description = 'What this job does';
