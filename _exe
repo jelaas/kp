@@ -81,7 +81,7 @@ function printattr($fn) {
   $out = file_get_contents($fn);
   $out = htmlspecialchars($out);
   print $out;
-  exit(0);	 
+  exit(0);
 }
 
 function nonemptystr($var) {
@@ -286,6 +286,11 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'adminroles') printattr($fn);
   if($attr == 'tags') printattr($fn);
   if($attr == 'serial') printattr($fn);
+  if($attr == 'options') {
+  	$out = file_get_contents($fn);
+  	print $out;
+	exit(0);
+  }
   if($attr == 'autodesc') { print "true"; exit(0); }
   if($attr == 'run') {
     if($admin == TRUE) {
@@ -426,6 +431,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if(file_put_contents( $root."/exe/".$job."/serial", $_REQUEST['serial'])===FALSE) {
       kp_log( $root, "User $name updates $job. serial failed\n");
       header("HTTP/1.1 500 User $name updates $job. Failed to update serial");
+      exit(0);
+    }
+    if(file_put_contents( $root."/exe/".$job."/options", $_REQUEST['options'])===FALSE) {
+      kp_log( $root, "User $name updates $job. options failed\n");
+      header("HTTP/1.1 500 User $name updates $job. Failed to update options");
       exit(0);
     }
 

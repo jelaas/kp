@@ -760,6 +760,7 @@ function Job(name) {
     this.params = [];
     this.files = [];
     this.serial = 'no';
+    this.options = {};
     this.pollcounter = 0;
     this.pollnow = 0;
     this.ajax = function (url, context, callback) {
@@ -874,6 +875,24 @@ function Job(name) {
 	    });
 	}
     }
+    this.options_display = function () {
+	var self=this;
+	this.optionselem.empty();
+	if(this.edit) {
+	    Resource.div(this.optionselem, 'Blue',':', function (div) {
+		var elem = Resource.input.checkbox(div, "blue");
+		if(self.options.blue)
+		    elem.prop('checked', true);
+		else
+		    elem.prop('checked', false);
+	    });
+	}
+    }
+    this.options_value = function () {
+	this.options.blue = this.optionselem.find('[value="blue"]')[0].checked;
+	return JSON.stringify(this.options);
+    }
+
     this.description_display = function () {
 	this.descelem.empty();
 	if(this.edit) {
@@ -960,6 +979,7 @@ function Job(name) {
 		params['description'] = event.data.description_value();
 		params['tags'] = event.data.tags_value();
 		params['serial'] = event.data.serial_value();
+		params['options'] = event.data.options_value();
 		params['roles'] = event.data.roles_value();
 		params['adminroles'] = event.data.adminroles_value();
 		params['run'] = event.data.run_value();
@@ -987,6 +1007,12 @@ function Job(name) {
 		    event.data.pollnow = 5;
 		}
 	    });
+	    if(this.options.blue) {
+		this.jobdataelem.addClass('blue');
+		this.jobdataelem.removeClass('jobrow');
+	    } else {
+		this.jobdataelem.addClass('jobrow');
+	    }
 	}
     }
 
@@ -1168,6 +1194,11 @@ function Job(name) {
 	    this.job.admin = text;
 	    this.job.edit_display();
 	}
+	if(this.attr == "options") {
+	    this.job.options = JSON.parse(text);
+	    this.job.options_display();
+	    if(this.job.options.blue) this.job.run_display();
+	}
     }
     
     this.history_cb = function (text,status,xhr) {
@@ -1206,6 +1237,7 @@ function Job(name) {
 	this.adminroles_display();
 	this.tags_display();
 	this.serial_display();
+	this.options_display();
 	this.description_display();
 	if(this.edit) 
 	    this.read_files();
@@ -1214,6 +1246,7 @@ function Job(name) {
     }
     this.read = function () {
 	this.framework_create();
+	this.read_attr("options");
 	this.read_attr("description");
 	this.read_attr("name");
 	this.read_params(1);
@@ -1294,6 +1327,9 @@ function Job(name) {
 			    });
 			    Resource.table.row(tbl, function (row) {
 				self.serialelem = Resource.table.col(row);
+			    });
+			    Resource.table.row(tbl, function (row) {
+				self.optionselem = Resource.table.col(row);
 			    });
 			});
 		    });

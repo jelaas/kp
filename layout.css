@@ -46,6 +46,9 @@ textarea {
     color: darkred;
 }
 
+.blue {
+  background-color:#ccf;
+}
 tr.jobrow:nth-of-type(even) {
   background-color:#eee;
 }
