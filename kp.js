@@ -4,11 +4,13 @@
  * Copyright: Jens Låås, UU 2012-2014
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
+"use strict";
 var baseurl, username, pathinfo, nonce;
 var glob_logid = 0;
 var jobs = { };
 var logs = [ ];
 var roles = [ ];
+var lang = 'en';
 
 String.prototype.toHHMMSS = function () {
     var sec_numb    = parseInt(this);
@@ -35,8 +37,8 @@ function ajax(url, context, callback) {
 }
 
 // _i18n[""] = '<span lang="sv"></span><span lang="en"></span>';
-i18n = {};
-_i18n = {};
+var i18n = {};
+var _i18n = {};
 _i18n["Add parameter"] = '<span lang="sv">Ny parameter</span><span lang="en">Add parameter</span>';
 _i18n["Admin"] = '<span lang="sv">Administratör</span><span lang="en">Admin</span>';
 _i18n["Description"] = '<span lang="sv">Beskrivning</span><span lang="en">Description</span>';
@@ -62,7 +64,7 @@ i18n.t = function (text) {
  * Utility functions to avoid using tags in plaintext when working with the DOM.
  */
 
-Resource = {};
+var Resource = {};
 Resource.button = {};
 Resource.menu = {};
 Resource.modal = {};
@@ -572,7 +574,7 @@ function Log(name) {
     this.poll_cb = function (text,status,xhr) {
 	this.dataelem.append(text);
 	this.pos += this.lengthInUtf8Bytes(text);
-	this.dataelem.scrollTop=this.dataelem.scrollHeight;
+	this.dataelem.scrollTop(this.dataelem[0].scrollHeight);
     }
     
     this.poll = function() {
@@ -619,6 +621,7 @@ function Param(parent, n, definition) {
     
     this.display = function () {
 	var self=this;
+	var i;
 	this.elem.empty();
 	
 	if(this.edit) {
@@ -769,6 +772,7 @@ function Job(name) {
 	});
     };
     this.editmode = function (mode) {
+	var i;
 	if( (mode == 0) && (this.edit != mode) ) {
 	    if(this.params_backup !== undefined) {
 		for(i=0;i<this.params.length;i++) {
@@ -1029,6 +1033,7 @@ function Job(name) {
 
     this.files_display = function () {
 	var self=this;
+	var i;
 	this.fileselem.empty();
 	if(this.edit) {
 	    Resource.div(self.fileselem, "Files", ":");
@@ -1115,7 +1120,7 @@ function Job(name) {
     this.param_cb = function (text,status,xhr) {
 	var param;
 	this.job.ajax(baseurl + "_exe/" + this.job.name + "/param" + (this.attr +1), { job: this.job, attr: (this.attr+1) }, this.job.param_cb);
-	for(i=0;i<this.job.params.length;i++) {
+	for(var i=0;i<this.job.params.length;i++) {
 	    if(this.job.params[i].n == this.attr) {
 		param = this.job.params[i];
 		param.def = text;
@@ -1167,7 +1172,7 @@ function Job(name) {
     
     this.history_cb = function (text,status,xhr) {
 	if(this.logs) {
-	    for(i=0;i<this.logs.length;i++) {
+	    for(var i=0;i<this.logs.length;i++) {
 		this.histelems[i].off('click mouseover mouseout');
 	    }
 	}
@@ -1368,7 +1373,7 @@ function gotlist(text) {
     var arr = text.split('\n');
     
     arr.sort();
-    for(i=0;i<arr.length;i++) {
+    for(var i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
 	new Job(arr[i]);
     }
@@ -1384,13 +1389,13 @@ function gotroles(text) {
 function gottags(text) {
     var arr = text.split('\n');
     var curtags = pathinfo.split('/');
-    var link, path, pathv, selected;
+    var link, path, pathv, selected, linkname;
 
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
 
     Resource.text($("#tags"),"Tags",": ");
 
-    for(i=0;i<arr.length;i++) {
+    for(var i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
 	arr.sort();
 	selected = false;
@@ -1416,8 +1421,8 @@ function gottags(text) {
 $(function () {
     // i18n: el cheapo
     lang = $("#user").attr("alang");
-    langs = lang.split(',');
-    for(i=0;i<langs.length;i++) {
+    var langs = lang.split(',');
+    for(var i=0;i<langs.length;i++) {
         if(langs[i].indexOf("sv") == 0) {
 	    document.body.className = "sv";
             break;
