@@ -210,12 +210,12 @@ Resource.input.option = function (appendtoelem, value) {
     return opt;
 };
 
-Resource.input.radio = function (appendtoelem, value) {
+Resource.input.radio = function (appendtoelem, name, value) {
     /* Resource.input.option(elem, name, value, [text ..]) */
     var opt;
     opt = $('<input type="radio" name="'+name+'" value="'+value+'"/>').appendTo(appendtoelem);
     for(var i=3;i<arguments.length;i++) {
-        $('<span>'+arguments[i]+'</span>').appendTo(opt);
+        $('<span>'+arguments[i]+'</span>').appendTo(appendtoelem);
     }
     return opt;
 };
@@ -571,9 +571,31 @@ function Log(name) {
 	return str.length + (m ? m.length : 0);
     }
     
+    /*
+      '&' (ampersand) becomes '&amp;'
+      '"' (double quote) becomes '&quot;' when ENT_NOQUOTES is not set.
+      "'" (single quote) becomes '&#039;' (or &apos;) only when ENT_QUOTES is set.
+      '<' (less than) becomes '&lt;'
+      '>' (greater than) becomes '&gt;'
+    */
+    this.lengthhtmlencoding = function (str) {
+	var l = 0;
+	var m;
+	m = str.match(/&amp;/g);
+	if(m) l += (m.length*4);
+	m = str.match(/&quot;/g);
+	if(m) l += (m.length*5);
+	m = str.match(/&lt;/g);
+	if(m) l += (m.length*3);
+	m = str.match(/&gt;/g);
+	if(m) l += (m.length*3);
+	return l;
+    }
+    
     this.poll_cb = function (text,status,xhr) {
 	this.dataelem.append(text);
 	this.pos += this.lengthInUtf8Bytes(text);
+	this.pos -= this.lengthhtmlencoding(text);
 	this.dataelem.scrollTop(this.dataelem[0].scrollHeight);
     }
     
@@ -666,16 +688,18 @@ function Param(parent, n, definition) {
 	    }
 	    if(arr[0] == "checkbox") {
 		var maxlen = arr[2];
-		for(i=3;i<arr.length;i++) {
-		    var opttext;
-		    if(arr[i].length > maxlen)
-			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
-		    else
-			opttext = arr[i];
-		    self.dataelem = Resource.div(self.elem, function (div) {
-			Resource.input.checkbox(div, arr[i], opttext);
-		    });
-		}
+		self.dataelem = Resource.div(self.elem, function (box) {
+		    for(i=3;i<arr.length;i++) {
+			var opttext;
+			if(arr[i].length > maxlen)
+			    opttext = ".."+arr[i].substr(arr[i].length - maxlen);
+			else
+			    opttext = arr[i];
+			Resource.div(box, function (div) {
+			    Resource.input.checkbox(div, arr[i], opttext);
+			});
+		    }
+		});
 		this.value = function () {
 		    var values;
 		    var val="";
@@ -692,17 +716,18 @@ function Param(parent, n, definition) {
 	    if(arr[0] == "radio") {
 		var options = "";
 		var maxlen = arr[2];
-		for(i=3;i<arr.length;i++) {
-		    var opttext;
-		    if(arr[i].length > maxlen)
-			opttext = ".."+arr[i].substr(arr[i].length - maxlen);
-		    else
-			opttext = arr[i];
-		    self.dataelem = Resource.div(self.elem, function (div) {
-			Resource.input.radio(div, self.n, arr[i], opttext);
-		    });
-
-		}
+		self.dataelem = Resource.div(self.elem, function (elem) {
+		    for(i=3;i<arr.length;i++) {
+			var opttext;
+			if(arr[i].length > maxlen)
+			    opttext = ".."+arr[i].substr(arr[i].length - maxlen);
+			else
+			    opttext = arr[i];
+			Resource.div(elem, function (div) {
+			    Resource.input.radio(div, self.n, arr[i], opttext);
+			});
+		    }
+		});
 		this.value = function () {
 		    var values;
 		    var val="";

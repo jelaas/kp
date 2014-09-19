@@ -294,7 +294,9 @@ if($_SERVER['REQUEST_METHOD'] == 'GET') {
   if($attr == 'autodesc') { print "true"; exit(0); }
   if($attr == 'run') {
     if($admin == TRUE) {
-      printattr($fn);
+  	$out = file_get_contents($fn);
+  	print $out;
+	exit(0);
     } else {
       print "true"; exit(0);
     }
