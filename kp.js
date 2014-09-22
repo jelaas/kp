@@ -110,8 +110,14 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].draggable) elem.attr("draggable", "true");
             if(args[i].rows) elem.attr("rows", args[i].rows);
             if(args[i].wrap) elem.attr("wrap", args[i].wrap);
-            if(args[i].width) elem.attr("width", args[i].width);
-	    if(args[i].height) elem.attr("height", args[i].height);
+            if(args[i].width) {
+		elem.attr("width", args[i].width);
+		elem.css("width", args[i].width);
+	    }
+	    if(args[i].height) {
+		elem.attr("height", args[i].height);
+		elem.css("height", args[i].height);
+	    }
 	    if(args[i].readonly) elem.attr('readonly','readonly');
             if(args[i].colspan) elem.attr("colspan", args[i].colspan);
             if(args[i].name) elem.attr("name", args[i].name);
@@ -986,10 +992,30 @@ function Job(name) {
     }
     
     this.run_display = function () {
+	var self=this;
 	this.runelem.empty();
 	if(this.edit) {
-	    Resource.div(this.runelem, 'Script:');
-	    var elem = Resource.textarea(this.runelem, { cols: 60, rows: 15 });
+	    Resource.div(this.runelem, 'Script:', function (div) {
+		var elem = Resource.image(div, baseurl+'pencil.png', { width: 18, height: 18 });
+		elem.click(self, function(event) {
+		    Resource.overlay.show( function (olay) {
+			Resource.div(olay, 'Script:');
+			var elem = Resource.textarea(olay, { height: '80%', width: '90%' });
+			elem.val(event.data.run);
+			Resource.div(olay, function (div) {
+			    Resource.button.click(div, "submit", "Ok", event.data, function(event){
+				Resource.overlay.hide();
+				event.data.runelem.find('textarea').val(elem.val());
+			    });
+			    Resource.button.click(div, "submit", "Cancel", event.data, function(event){
+				Resource.overlay.hide();
+			    });
+			});
+		    });
+		});
+	    });
+
+	    var elem = Resource.textarea(this.runelem, { readonly: true, cols: 20, rows: 15 });
 	    elem.val(this.run);
 	    this.run_value = function () {
 		return elem.val();
