@@ -788,12 +788,13 @@ function Job(name) {
     this.options = {};
     this.pollcounter = 0;
     this.pollnow = 0;
-    this.ajax = function (url, context, callback) {
+    this.ajax = function (url, context, callback, errorcb) {
 	$.ajax({
             url: url,
             type: 'GET',
             dataType: 'text',
             success: callback,
+	    error: errorcb,
 	    context: context
 	});
     };
@@ -1222,10 +1223,14 @@ function Job(name) {
 	if(this.attr == "options") {
 	    this.job.options = JSON.parse(text);
 	    this.job.options_display();
-	    if(this.job.options.blue) this.job.run_display();
 	}
+	if(this.cb) this.cb.call(this.job);
     }
     
+    this.attr_ecb = function (text,status,xhr) {
+	if(this.cb) this.cb.call(this.job);
+    }
+
     this.history_cb = function (text,status,xhr) {
 	if(this.logs) {
 	    for(var i=0;i<this.logs.length;i++) {
@@ -1241,8 +1246,8 @@ function Job(name) {
 	this.files_display();
     }
 
-    this.read_attr = function (attr) {
-	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr }, this.attr_cb);
+    this.read_attr = function (attr, cb) {
+	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr, cb: cb }, this.attr_cb, this.attr_ecb);
     };
     this.read_params = function (param_no) {
 	this.ajax(baseurl + "_exe/" + this.name + "/param" + param_no, { job: this, attr: param_no }, this.param_cb);
@@ -1269,9 +1274,7 @@ function Job(name) {
 	else
 	    this.files_display();
     }
-    this.read = function () {
-	this.framework_create();
-	this.read_attr("options");
+    this.readrest = function () {
 	this.read_attr("description");
 	this.read_attr("name");
 	this.read_params(1);
@@ -1284,6 +1287,10 @@ function Job(name) {
 	this.read_history();
 	if(this.edit) this.read_files();
 	this.edit_display();
+    }
+    this.read = function () {
+	this.framework_create();
+	this.read_attr("options", this.readrest);
     };
 
     this.drop = function (data) {
