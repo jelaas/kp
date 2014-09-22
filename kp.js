@@ -358,11 +358,13 @@ Resource.overlay.show = function () {
     window.scrollTo(0, 0);
     elem.show();
     $('#fade').show();
+    $('body').css({ overflow: 'hidden' })
     return elem;
 };
 
 Resource.overlay.hide = function () {
     var y;
+    $('body').css({ overflow: 'inherit' })
     $('#overlay').hide();
     $('#fade').hide();
     y = $('#overlay').attr("previousy");
