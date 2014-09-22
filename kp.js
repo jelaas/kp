@@ -1501,6 +1501,8 @@ $(function () {
         }
     }
 
+    $("#kp").append('<div id="overlay"></div><div id="fade"></div>');
+
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
