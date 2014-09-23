@@ -12,6 +12,8 @@ var logs = [ ];
 var roles = [ ];
 var lang = 'en';
 
+var conf = {};
+
 String.prototype.toHHMMSS = function () {
     var sec_numb    = parseInt(this);
     var hours   = Math.floor(sec_numb / 3600);
@@ -105,6 +107,7 @@ Resource.__args = function (cb, elem, args, start) {
             if(args[i].sanitize !== undefined && args[i].sanitize === false) sane=false;
             if(args[i].conv !== undefined && args[i].conv === false) conv=false;
             if(args[i].border) elem.attr("border", args[i].border);
+            if(args[i].alt) elem.attr("alt", args[i].alt);
             if(args[i].id) elem.attr("id", args[i].id);
             if(args[i].cols) elem.attr("cols", args[i].cols);
             if(args[i].draggable) elem.attr("draggable", "true");
@@ -378,7 +381,8 @@ Resource.paragraph = function (appendtoelem) {
 };
 
 Resource.link = function (appendtoelem, url) {
-    var link = $('<a href="'+url+'"/>').appendTo(appendtoelem);
+    var link = $('<a/>').appendTo(appendtoelem);
+    link.attr("href", url);
     Resource._args(link, arguments, 2);
     return link;
 };
@@ -1071,6 +1075,7 @@ function Job(name) {
     }
 
     this.edit_display = function () {
+	var self=this;
 	this.editelem.empty();
 	if(this.edit) {
 	    var elem = Resource.image(this.editelem, baseurl+'close.png', { width: 18, height: 18 });
@@ -1101,6 +1106,9 @@ function Job(name) {
 		    event.data.message_display('');
 		});
 	    }
+	    Resource.link(this.editelem, '?link='+self.name, function(link) {
+                Resource.image(link, baseurl+'download.png', { width: 18, height: 18, alt: 'Direct link'} );
+            });
 	}
     }
 
@@ -1368,7 +1376,7 @@ function Job(name) {
                         });
                     });
 		    self.nameelem = Resource.span(col, { draggable: true, class: "name" }, self.name);
-		    self.editelem = Resource.span(col, { class: "name" }, self.name);
+		    self.editelem = Resource.span(col, { class: "name" });
 		});
 		self.jobdataelem = Resource.table.row($('#items'), { class: "jobrow" }, function (row) {
 		    Resource.table.col(row, { valign: "top" }, function (col) {
@@ -1471,6 +1479,7 @@ function gotlist(text) {
     arr.sort();
     for(var i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
+	if(conf.link !== undefined && arr[i] != conf.link) continue;
 	new Job(arr[i]);
     }
 }
@@ -1529,8 +1538,21 @@ $(function () {
         }
     }
 
+    $.QueryString = (function(a) {
+        if (a == "") return {};
+        var b = {};
+        for (var i = 0; i < a.length; ++i)
+        {
+            var p=a[i].split('=');
+            if (p.length != 2) continue;
+            b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+        }
+        return b;
+    })(window.location.search.substr(1).split('&'));
+    conf.link = $.QueryString['link'];
+    
     $("#kp").append('<div id="overlay"></div><div id="fade"></div>');
-
+    
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");
@@ -1538,7 +1560,7 @@ $(function () {
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
     nonce = $("#user").attr("nonce");
     createjob = $("#user").attr("createjob");
-    if(curtags.length) {
+    if(curtags.length || (conf.link !== undefined)) {
 	$.get(baseurl + "_view" + pathinfo,
 	      function(text, status, xhr) { gotlist(text); },
 	      "text");

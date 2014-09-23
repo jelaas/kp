@@ -18,7 +18,7 @@ $SERVICE=$KPCASSERVICE.$PI;
 $KPSECRETS=$_SERVER["KPSECRETS"];
 
 if(strlen($PI)) {
-  if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-_./a-z0-9]+$,")))) {
+  if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-=_./a-z0-9]+$,")))) {
     kp_log($root, "invalid PATH_INFO: ".$PI);
     header("HTTP/1.1 403 Invalid PATH");
     header('Content-type: text/plain');
