@@ -173,7 +173,10 @@ if(is_writable($dir) === FALSE) {
 # Redirect if no PATH_INFO. This makes links work better.
 #
 if(!isset($_SERVER["PATH_INFO"])) {
-  header("Location: ".$SERVICE."/");
+   if(isset($_REQUEST['link']))
+     header("Location: ".$KPCASSERVICE.$PI."/?link=".$_REQUEST['link']);
+   else
+     header("Location: ".$KPCASSERVICE.$PI."/");
   exit(0);
 }
 
