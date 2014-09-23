@@ -12,7 +12,7 @@ var logs = [ ];
 var roles = [ ];
 var lang = 'en';
 
-var conf = {};
+var kp = {};
 
 String.prototype.toHHMMSS = function () {
     var sec_numb    = parseInt(this);
@@ -1479,7 +1479,7 @@ function gotlist(text) {
     arr.sort();
     for(var i=0;i<arr.length;i++) {
 	if(arr[i].length < 2) continue;
-	if(conf.link !== undefined && arr[i] != conf.link) continue;
+	if(kp.link !== undefined && arr[i] != kp.link) continue;
 	new Job(arr[i]);
     }
 }
@@ -1549,7 +1549,7 @@ $(function () {
         }
         return b;
     })(window.location.search.substr(1).split('&'));
-    conf.link = $.QueryString['link'];
+    kp.link = $.QueryString['link'];
     
     $("#kp").append('<div id="overlay"></div><div id="fade"></div>');
     
@@ -1560,7 +1560,7 @@ $(function () {
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
     nonce = $("#user").attr("nonce");
     createjob = $("#user").attr("createjob");
-    if(curtags.length || (conf.link !== undefined)) {
+    if(curtags.length || (kp.link !== undefined)) {
 	$.get(baseurl + "_view" + pathinfo,
 	      function(text, status, xhr) { gotlist(text); },
 	      "text");
