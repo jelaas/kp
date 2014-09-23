@@ -41,9 +41,13 @@ function ajax(url, context, callback) {
 // _i18n[""] = '<span lang="sv"></span><span lang="en"></span>';
 var i18n = {};
 var _i18n = {};
+_i18n["Abort"] = '<span lang="sv">Avbryt</span><span lang="en">Abort</span>';
+_i18n["Abort job"] = '<span lang="sv">Avbryt körning</span><span lang="en">Abort job</span>';
 _i18n["Add parameter"] = '<span lang="sv">Ny parameter</span><span lang="en">Add parameter</span>';
 _i18n["Admin"] = '<span lang="sv">Administratör</span><span lang="en">Admin</span>';
+_i18n["Cancel"] = '<span lang="sv">Avbryt</span><span lang="en">Cancel</span>';
 _i18n["Description"] = '<span lang="sv">Beskrivning</span><span lang="en">Description</span>';
+_i18n["Do nothing"] = '<span lang="sv">Gör ingenting</span><span lang="en">Do nothing</span>';
 _i18n["file"] = '<span lang="sv">fil</span><span lang="en">file</span>';
 _i18n["Files"] = '<span lang="sv">Filer</span><span lang="en">Files</span>';
 _i18n["No"] = '<span lang="sv">Nej</span><span lang="en">No</span>';
@@ -295,9 +299,26 @@ Resource.menu.item = function (elem, text, fn) {
             elem.menuelem.hide();
             fn();
         });
-    m.on("mouseover mouseout", highlight);
+    m.on("mouseover mouseout", Resource.menu._highlight);
     return m;
 };
+
+/* used for highlighting items in context menus */
+Resource.menu._highlight = function (event)
+{
+    if (event.type == 'mouseover') {
+        if($(this).data('mflag') != '1') {
+            $(this).data('bgcolor', $(this).css('background-color'));
+            $(this).data('mflag', '1');
+            $(this).css('background-color','red');
+        }
+    }
+    if (event.type == 'mouseout') {
+        $(this).css('background-color', $(this).data('bgcolor'));
+        $(this).data('mflag', '0');
+    }
+    return false;
+}
 
 Resource.modal.alert = function () {
     /* Resource.modal.alert( "text" .., oldpos )
@@ -1201,6 +1222,25 @@ function Job(name) {
 		}
 		return false;
 	    });
+	    
+	    if(logstatus == "r") {
+		self.histelems[i].bind("contextmenu", function (logname) {
+		    return function(event) {
+			var elem;
+			event.preventDefault();
+			elem = $("div.custom-menu");
+			elem.empty();
+			Resource.menu.create(elem, function (menu) {
+			    Resource.menu.item(menu, 'Abort', function () {
+				Resource.modal.confirm("Abort job", "Do nothing", "Abort job", " ", logname, function() {
+				    alert("aborting "+logname);
+				});
+			    });
+			    elem.css({top: event.pageY + "px", left: event.pageX + "px"}).show();
+			});
+		    };
+		}(logname));
+	    }
 	}
     }
 
@@ -1552,7 +1592,15 @@ $(function () {
     kp.link = $.QueryString['link'];
     
     $("#kp").append('<div id="overlay"></div><div id="fade"></div>');
-    
+    //Right click menu
+    $('<div class="custom-menu"></div>').appendTo("body").hide();
+    $(document).bind("mousedown", function(event) {
+	if($(event.target).parents("div.custom-menu").length == 0) {
+            if(!$(event.target).is("div.custom-menu"))
+                $("div.custom-menu").hide();
+        }
+    });
+
     baseurl = $("#user").attr("baseurl") + "/";
     username = $("#user").attr("username");
     pathinfo = $("#user").attr("pathinfo");

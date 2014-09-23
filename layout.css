@@ -26,6 +26,17 @@
     z-index: 90; /* makes the div the second most top layer, so it’ll lay on top of everything else EXCEPT for divs with a higher z-index (meaning the #overlay ruleset) */
 }
 
+.custom-menu {
+    z-index:1000;
+    position: absolute;
+    background-color:white;
+    border: 1px solid black;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
 body {
   font-family: sans-serif;
   font-size: 18px;
