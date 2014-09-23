@@ -5,7 +5,7 @@
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
 "use strict";
-var baseurl, username, pathinfo, nonce;
+var baseurl, username, pathinfo, nonce, createjob;
 var glob_logid = 0;
 var jobs = { };
 var logs = [ ];
