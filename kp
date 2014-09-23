@@ -14,7 +14,10 @@ else
   $PI="";
 $CASURL=$_SERVER["KPCASURL"];
 $KPCASSERVICE=$_SERVER["KPCASSERVICE"];
-$SERVICE=$KPCASSERVICE.$PI;
+if(isset($_SERVER["QUERY_STRING"]))
+  $SERVICE=$KPCASSERVICE.$PI.'?'.$_SERVER['QUERY_STRING'];
+else
+  $SERVICE=$KPCASSERVICE.$PI;
 $KPSECRETS=$_SERVER["KPSECRETS"];
 
 if(strlen($PI)) {
@@ -254,7 +257,7 @@ if($sesid == "invalid") {
     header("Location: $CASURL/login?service=".$SERVICE);
   } else {
     $ticket = $_REQUEST['ticket'];
-    $ch = curl_init ("$CASURL/validate?service=".$SERVICE."&ticket=$ticket");
+    $ch = curl_init ("$CASURL/validate?service=".$SERVICE);
     curl_setopt ($ch, CURLOPT_HEADER, 0);
     curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
 
@@ -310,7 +313,10 @@ if($sesid == "invalid") {
 }
 
 if (isset($_REQUEST['ticket'])) {
-  header("Location: $SERVICE");
+   if(isset($_REQUEST['link']))
+     header("Location: ".$KPCASSERVICE.$PI."?link=".$_REQUEST['link']);
+   else
+     header("Location: ".$KPCASSERVICE.$PI);
   exit(0);
 }
 
