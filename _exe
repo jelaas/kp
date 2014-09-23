@@ -523,6 +523,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       file_put_contents("$root/log/$d.job", $job);
       file_put_contents("$root/log/$d.start", time());
       file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$job."/roles"));
+      file_put_contents("$root/log/$d.pid", posix_getpid());
 
       if($serial == "yes") {
 	kp_log( $root, "$job is serialized, checking lock: $root/tmp/RUN-$job");
