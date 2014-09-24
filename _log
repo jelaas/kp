@@ -109,6 +109,54 @@ if($attr == "status") {
   exit(0);
 }
 
+function children($list, $pid) {
+  $nlist = array();
+
+  if($dh = opendir("/proc")) {
+    while (($file = readdir($dh)) !== false) {
+      if($file == ".") continue;
+      if($file == "..") continue;
+      if(file_exists("/proc/".$file."/status")) {
+	 $status = file_get_contents("/proc/".$file."/status");
+	 if(strstr($status, "PPid:\t".$pid)) {
+	   array_push($nlist, $file."\n");
+	 }
+      }
+    }
+    closedir($dh);
+    
+    foreach ($nlist as $key => $cpid) {
+      array_push($list, $cpid);
+    }
+    foreach ($nlist as $key => $cpid) {
+      $list = children($list, $cpid);
+    }
+  }
+  return $list;
+}
+
+if($attr == "abort") {
+  $fn = $root."/log/".$log.".status";
+  if(file_exists($fn)) {
+    header("HTTP/1.1 404 Job not running");
+    exit(0);
+  }
+  $fn = $root."/log/".$log.".pid";
+  if(!file_exists($fn)) {
+    header("HTTP/1.1 404 No pid yet");
+    exit(0);
+  }
+  $pid = file_get_contents($fn);
+  
+  $list = array();
+  $list = children($list, $pid);
+  foreach ($list as $key => $cpid) {
+    print "kill $cpid";
+    posix_kill($cpid, 15);
+  }
+  exit(0);
+}
+
 if($attr) {
   header("HTTP/1.1 404 No such log attribute");
   exit(0);

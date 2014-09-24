@@ -1233,7 +1233,9 @@ function Job(name) {
 			Resource.menu.create(elem, function (menu) {
 			    Resource.menu.item(menu, 'Abort', function () {
 				Resource.modal.confirm("Abort job", "Do nothing", "Abort job", " ", logname, function() {
-				    alert("aborting "+logname);
+				    self.ajax(baseurl + "_log/" + logname + "/abort", self, function (text,status,xhr) {
+					alert("Killed with SIGTERM");
+				    });
 				});
 			    });
 			    elem.css({top: event.pageY + "px", left: event.pageX + "px"}).show();
