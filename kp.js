@@ -5,14 +5,18 @@
  * Copyright license: According to GPL, see file LICENSE in this directory.
  */
 "use strict";
-var baseurl, username, pathinfo, nonce, createjob;
-var glob_logid = 0;
-var jobs = { };
-var logs = [ ];
-var roles = [ ];
-var lang = 'en';
 
 var kp = {};
+kp.glob_logid = 0;
+kp.jobs = { };
+kp.logs = [ ];
+kp.roles = [ ];
+kp.lang = 'en';
+kp.baseurl = undefined;
+kp.username = undefined;
+kp.pathinfo = undefined;
+kp.nonce = undefined;
+kp.createjob = undefined;
 
 String.prototype.toHHMMSS = function () {
     var sec_numb    = parseInt(this);
@@ -481,18 +485,18 @@ Resource.tt = function (appendtoelem) {
 function Log(name) {
     var i;
 
-    if(logs[name]) {
+    if(kp.logs[name]) {
 	return undefined;
     }
 
-    glob_logid += 1;
-    this.id = glob_logid;
+    kp.glob_logid += 1;
+    this.id = kp.glob_logid;
     this.name = name;
     this.pos = 0;
     this.start = 0;
     this.end = 0;
     this.pollstop = 0;
-    logs[ this.name ] = this;
+    kp.logs[ this.name ] = this;
 
     this.ajax = function (url, context, callback) {
 	$.ajax({
@@ -504,7 +508,7 @@ function Log(name) {
 	});
     };
     this.read_attr = function (attr) {
-	this.ajax(baseurl + "_log/" + this.name + "/" + attr, { log: this, attr: attr }, this.attr_cb);
+	this.ajax(kp.baseurl + "_log/" + this.name + "/" + attr, { log: this, attr: attr }, this.attr_cb);
     };
     
     this.time_display = function () {
@@ -564,12 +568,12 @@ function Log(name) {
 	    this.elem = Resource.table.table($('#logs'), { border: 0, class: "logtable" }, function (tbl) {
 		Resource.table.row(tbl, function (row) {
 		    Resource.table.col(row, { colspan: 3 }, function (col) {
-			Resource.image(col, baseurl+'close.png', { width: 18, height: 18 }, function (img) {
+			Resource.image(col, kp.baseurl+'close.png', { width: 18, height: 18 }, function (img) {
 			    img.click(self, function (event) {
 				event.data.remove();
 			    });
 			});
-			Resource.image(col, baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
+			Resource.image(col, kp.baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
 			    img.click(self, function (event) {
 				event.data.dataelem.toggle(30);
 			    });
@@ -581,8 +585,8 @@ function Log(name) {
 		    self.logtimeelem = Resource.table.col(row);
 		    self.logstatuselem = Resource.table.col(row);
 	    	    Resource.table.col(row, function (col) {
-			Resource.link(col, baseurl+ '_log/' +self.name, function(link) {
-			    Resource.image(link, baseurl+'download.png', { width: 18, height: 18 });
+			Resource.link(col, kp.baseurl+ '_log/' +self.name, function(link) {
+			    Resource.image(link, kp.baseurl+'download.png', { width: 18, height: 18 });
 			});
 		    });
 		    Resource.table.row(tbl, function (row) {
@@ -634,13 +638,13 @@ function Log(name) {
     
     this.poll = function() {
 	this.read();
-	this.ajax(baseurl + "_log/" + this.name + "?start="+this.pos, this, this.poll_cb);
+	this.ajax(kp.baseurl + "_log/" + this.name + "?start="+this.pos, this, this.poll_cb);
     }
 
     this.remove = function() {
 	if(this.timer != undefined) clearInterval(this.timer);
 	this.elem.empty();
-	logs[this.name] = undefined;
+	kp.logs[this.name] = undefined;
     }
 
     this.poll();
@@ -803,10 +807,10 @@ function Param(parent, n, definition) {
   Returns the created job object.
 */
 function Job(name) {
-    if(jobs[name])
+    if(kp.jobs[name])
 	return undefined;
     
-    jobs[name] = this;
+    kp.jobs[name] = this;
     
     this.histelems = [];
     this.edit = 0;
@@ -849,7 +853,7 @@ function Job(name) {
     }
 
     this.post = function (url, context, callback, errorcb, data) {
-	data['nonce'] = nonce;
+	data['nonce'] = kp.nonce;
 	$.ajax({
             url: url,
             type: 'POST',
@@ -861,7 +865,7 @@ function Job(name) {
 	});
     };
     this.postfile = function (url, context, callback, data) {
-	data['nonce'] = nonce;
+	data['nonce'] = kp.nonce;
 	$.ajax({
             url: url,
             type: 'POST',
@@ -1010,7 +1014,7 @@ function Job(name) {
     this.delete_cb = function (text,status,xhr) {
 	this.elem.remove();
 	this.jobdataelem.remove();
-	jobs[this.name] = undefined;
+	kp.jobs[this.name] = undefined;
 	if(this.timer != undefined) clearInterval(this.timer);
     }
     
@@ -1023,7 +1027,7 @@ function Job(name) {
 	this.runelem.empty();
 	if(this.edit) {
 	    Resource.div(this.runelem, 'Script:', function (div) {
-		var elem = Resource.image(div, baseurl+'pencil.png', { width: 18, height: 18 });
+		var elem = Resource.image(div, kp.baseurl+'pencil.png', { width: 18, height: 18 });
 		elem.click(self, function(event) {
 		    Resource.overlay.show( function (olay) {
 			Resource.div(olay, 'Script:');
@@ -1064,7 +1068,7 @@ function Job(name) {
 		params['run'] = event.data.run_value();
 		if(event.data.justcreated == 1)
 		    params['create'] = 'yes';
-		event.data.post(baseurl + "_exe/" + event.data.name + "/update",
+		event.data.post(kp.baseurl + "_exe/" + event.data.name + "/update",
 				event.data,
 				event.data.update_cb,
 				event.data.run_ecb,
@@ -1078,7 +1082,7 @@ function Job(name) {
 		    postparams['param'+event.data.params[i].n] = event.data.params[i].value();
 		}
 		if(confirm("Run: '"+event.data.nicename+"' ?")) {
-		    event.data.post(baseurl + "_exe/" + event.data.name + "/run",
+		    event.data.post(kp.baseurl + "_exe/" + event.data.name + "/run",
 				    event.data,
 				    event.data.run_cb,
 				    event.data.run_ecb,
@@ -1099,18 +1103,18 @@ function Job(name) {
 	var self=this;
 	this.editelem.empty();
 	if(this.edit) {
-	    var elem = Resource.image(this.editelem, baseurl+'close.png', { width: 18, height: 18 });
+	    var elem = Resource.image(this.editelem, kp.baseurl+'close.png', { width: 18, height: 18 });
 	    elem.click(this, function(event) {
                 event.data.editmode(0);
                 event.data.display();
             });
-	    elem = Resource.image(this.editelem, baseurl+'trashcan.png', { width: 18, height: 22 });
+	    elem = Resource.image(this.editelem, kp.baseurl+'trashcan.png', { width: 18, height: 22 });
 	    elem.click(this, function(event) {
 		if(event.data.justcreated == 1) {
 		    event.data.delete_cb();
 		} else {
 		    if(confirm("Delete job "+event.data.name+"?")) {
-			event.data.post(baseurl + "_exe/" + event.data.name + "/delete",
+			event.data.post(kp.baseurl + "_exe/" + event.data.name + "/delete",
 					event.data,
 					event.data.delete_cb,
 					event.data.run_ecb,
@@ -1120,7 +1124,7 @@ function Job(name) {
 	    });
 	} else {
 	    if(this.admin == "1" || this.justcreated == 1) {
-		var elem = Resource.image(this.editelem, baseurl+'pencil.png', { width: 18, height: 18 });
+		var elem = Resource.image(this.editelem, kp.baseurl+'pencil.png', { width: 18, height: 18 });
 		elem.click(this, function(event) {
 		    event.data.editmode(1);
 		    event.data.display();
@@ -1128,13 +1132,13 @@ function Job(name) {
 		});
 	    }
 	    Resource.link(this.editelem, '?link='+self.name, function(link) {
-                Resource.image(link, baseurl+'download.png', { width: 18, height: 18, alt: 'Direct link'} );
+                Resource.image(link, kp.baseurl+'download.png', { width: 18, height: 18, alt: 'Direct link'} );
             });
 	}
     }
 
     this.sendfile = function (formdata, name) {
-	this.postfile(baseurl + "_file/" + this.name + "/put/"+name,
+	this.postfile(kp.baseurl + "_file/" + this.name + "/put/"+name,
 			this,
 			this.read_files,
 			formdata);
@@ -1151,10 +1155,10 @@ function Job(name) {
 		    Resource.table.row(tbl, { class: "files" }, function (row) {
 			Resource.table.col(row, self.files[i]);
 			Resource.table.col(row, function (td) {
-			    var elem = Resource.image(td, baseurl+'close.png', { width: 18, height: 18 } );
+			    var elem = Resource.image(td, kp.baseurl+'close.png', { width: 18, height: 18 } );
 			    elem.click({ job: self, n: i }, function(event) {
 				if(confirm("Delete file " + event.data.job.files[event.data.n] + "?")) {
-				    event.data.job.ajax(baseurl + "_file/" + event.data.job.name + "/del/" + event.data.job.files[event.data.n] , event.data.job, event.data.job.read_files);
+				    event.data.job.ajax(kp.baseurl + "_file/" + event.data.job.name + "/del/" + event.data.job.files[event.data.n] , event.data.job, event.data.job.read_files);
 				}
 			    });
 			});
@@ -1233,7 +1237,7 @@ function Job(name) {
 			Resource.menu.create(elem, function (menu) {
 			    Resource.menu.item(menu, 'Abort', function () {
 				Resource.modal.confirm("Abort job", "Do nothing", "Abort job", " ", logname, function() {
-				    self.ajax(baseurl + "_log/" + logname + "/abort", self, function (text,status,xhr) {
+				    self.ajax(kp.baseurl + "_log/" + logname + "/abort", self, function (text,status,xhr) {
 					alert("Killed with SIGTERM");
 				    });
 				});
@@ -1249,7 +1253,7 @@ function Job(name) {
     // this is structure object with members job and attr
     this.param_cb = function (text,status,xhr) {
 	var param;
-	this.job.ajax(baseurl + "_exe/" + this.job.name + "/param" + (this.attr +1), { job: this.job, attr: (this.attr+1) }, this.job.param_cb);
+	this.job.ajax(kp.baseurl + "_exe/" + this.job.name + "/param" + (this.attr +1), { job: this.job, attr: (this.attr+1) }, this.job.param_cb);
 	for(var i=0;i<this.job.params.length;i++) {
 	    if(this.job.params[i].n == this.attr) {
 		param = this.job.params[i];
@@ -1325,16 +1329,16 @@ function Job(name) {
     }
 
     this.read_attr = function (attr, cb) {
-	this.ajax(baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr, cb: cb }, this.attr_cb, this.attr_ecb);
+	this.ajax(kp.baseurl + "_exe/" + this.name + "/" + attr, { job: this, attr: attr, cb: cb }, this.attr_cb, this.attr_ecb);
     };
     this.read_params = function (param_no) {
-	this.ajax(baseurl + "_exe/" + this.name + "/param" + param_no, { job: this, attr: param_no }, this.param_cb);
+	this.ajax(kp.baseurl + "_exe/" + this.name + "/param" + param_no, { job: this, attr: param_no }, this.param_cb);
     };
     this.read_history = function () {
-	this.ajax(baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
+	this.ajax(kp.baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
     };
     this.read_files = function () {
-	this.ajax(baseurl + "_file/" + this.name + "/list" , this, this.files_cb);
+	this.ajax(kp.baseurl + "_file/" + this.name + "/list" , this, this.files_cb);
     }
     this.display = function () {
 	this.nicename_display();
@@ -1373,7 +1377,7 @@ function Job(name) {
 
     this.drop = function (data) {
 	var src, i;
-	src = jobs[data];
+	src = kp.jobs[data];
 	if(this.edit) {
 	    this.descelem.find('textarea').val(src.description);
 	    this.admroleelem.find('textarea').val(src.adminroles);
@@ -1408,7 +1412,7 @@ function Job(name) {
 	if (!this.elem) {
 	    this.elem = Resource.table.row($('#items'), { class: "jobrow" }, function (row) {
 		Resource.table.col(row, { colspan: 2 }, function (col) {
-		    Resource.image(col, baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
+		    Resource.image(col, kp.baseurl+'plus.png', { width: 18, height: 18 }, function (img) {
                         img.click(self, function (event) {
                             event.data.jobdataelem.toggle(30);
 			    if(localStorage[event.data.name+'.'+'hide'] == 1)
@@ -1528,14 +1532,14 @@ function gotlist(text) {
 
 function gotroles(text) {
     $("#roles").empty();
-    Resource.image($("#roles"), baseurl+'key.png', { width: 18, height: 18 });
+    Resource.image($("#roles"), kp.baseurl+'key.png', { width: 18, height: 18 });
     Resource.text($("#roles"), text);
-    roles = text.split('\n');
+    kp.roles = text.split('\n');
 }
 
 function gottags(text) {
     var arr = text.split('\n');
-    var curtags = pathinfo.split('/');
+    var curtags = kp.pathinfo.split('/');
     var link, path, pathv, selected, linkname;
 
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
@@ -1552,13 +1556,13 @@ function gottags(text) {
 	    linkname = arr[i];
 	    selected = true;
 	} else {
-	    if(pathinfo.length > 1)
-		path = pathinfo.substr(1) + "/" + arr[i];
+	    if(kp.pathinfo.length > 1)
+		path = kp.pathinfo.substr(1) + "/" + arr[i];
 	    else
 		path = arr[i];
 	    linkname = arr[i];
 	}
-	Resource.link($("#tags"), baseurl+"kp/"+path, function(link) {
+	Resource.link($("#tags"), kp.baseurl+"kp/"+path, function(link) {
 	    Resource.span(link, { bold: selected }, linkname);
 	});
 	Resource.text($("#tags"), " ");
@@ -1567,8 +1571,8 @@ function gottags(text) {
 
 $(function () {
     // i18n: el cheapo
-    lang = $("#user").attr("alang");
-    var langs = lang.split(',');
+    kp.lang = $("#user").attr("alang");
+    var langs = kp.lang.split(',');
     for(var i=0;i<langs.length;i++) {
         if(langs[i].indexOf("sv") == 0) {
 	    document.body.className = "sv";
@@ -1603,34 +1607,34 @@ $(function () {
         }
     });
 
-    baseurl = $("#user").attr("baseurl") + "/";
-    username = $("#user").attr("username");
-    pathinfo = $("#user").attr("pathinfo");
-    var curtags = pathinfo.split('/');
+    kp.baseurl = $("#user").attr("baseurl") + "/";
+    kp.username = $("#user").attr("username");
+    kp.pathinfo = $("#user").attr("pathinfo");
+    var curtags = kp.pathinfo.split('/');
     curtags = curtags.filter(function (e) {if(e.length >0) return true;return false;});
-    nonce = $("#user").attr("nonce");
-    createjob = $("#user").attr("createjob");
+    kp.nonce = $("#user").attr("nonce");
+    kp.createjob = $("#user").attr("createjob");
     if(curtags.length || (kp.link !== undefined)) {
-	$.get(baseurl + "_view" + pathinfo,
+	$.get(kp.baseurl + "_view" + kp.pathinfo,
 	      function(text, status, xhr) { gotlist(text); },
 	      "text");
     }
-    $.get(baseurl + "_auth/" + username,
+    $.get(kp.baseurl + "_auth/" + kp.username,
 	  function(text, status, xhr) { gotroles(text); },
 	  "text");
-    $.get(baseurl + "_tags" + pathinfo,
+    $.get(kp.baseurl + "_tags" + kp.pathinfo,
 	  function(text, status, xhr) { gottags(text); },
 	  "text");
-    if(createjob == "1") {
-	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+baseurl+'blueplus.png" id="createbutton">');
+    if(kp.createjob == "1") {
+	$("#createjob").append('<img WIDTH=18 HEIGHT=18 src="'+kp.baseurl+'blueplus.png" id="createbutton">');
 	$('#createbutton').click(this, function(event) {
 	    var d = new Date();
-	    var job = new Job(username+'-'+Math.round((d.getTime()/1000)-1363361021));
+	    var job = new Job(kp.username+'-'+Math.round((d.getTime()/1000)-1363361021));
 	    job.edit = 1;
 	    job.justcreated = 1;
 	    job.description = 'What this job does';
-	    job.roles = roles.join('\n');
-	    job.adminroles = roles[0];
+	    job.roles = kp.roles.join('\n');
+	    job.adminroles = kp.roles[0];
 	    job.run = '';
 	    job.tags = 'new';
 	    job.display();
