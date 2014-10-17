@@ -486,6 +486,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       print_r($roles);
       exit(0);
     }
+    $maxparam=0;
     for ($i = 1; ; $i++) {
       if(isset($_REQUEST['param'.$i])) {
 	$validator = getvalidator($root, $job, 'param'.$i);
@@ -497,6 +498,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 	    exit(0);
 	  }
 	  putenv("PARAM".$i."=".$_REQUEST['param'.$i]);
+	  $maxparam=$i;
 	}
       } else {
 	if($i > 10) break;
@@ -521,9 +523,22 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     if($pid == 0) {
       posix_setsid();
       file_put_contents("$root/log/$d.job", $job);
-      file_put_contents("$root/log/$d.start", time());
-      file_put_contents("$root/log/$d.roles", file_get_contents($root."/exe/".$job."/roles"));
-      file_put_contents("$root/log/$d.pid", posix_getpid());
+      $t = time();
+      file_put_contents("$root/log/$d.start", $t);
+      $r = file_get_contents($root."/exe/".$job."/roles");
+      file_put_contents("$root/log/$d.roles", $r);
+      $r = json_encode($r);
+      $p = posix_getpid();
+      file_put_contents("$root/log/$d.pid", $p);
+      
+      $pjson = "[ ";
+      for ($i = 1;$i <= $maxparam ; $i++) {
+      	  $pp = json_encode($_REQUEST['param'.$i]);
+	  if ( $i < $maxparam ) $pp = $pp.", ";
+      	  $pjson = $pjson.$pp;
+      }
+      $pjson = $pjson." ]";
+      file_put_contents("$root/log/$d.json", "{ \"params\": $pjson, \"start\": $t, \"job\": \"$job\", \"pid\": $p, \"roles\": $r }");
 
       if($serial == "yes") {
 	kp_log( $root, "$job is serialized, checking lock: $root/tmp/RUN-$job");

@@ -71,6 +71,11 @@ textarea {
     color: black;
 }
 
+.popup {
+    font-size: 12px;
+    color: black;
+}
+
 .logtable {
         display: inline;
 }

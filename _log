@@ -76,6 +76,18 @@ if($permitted == 0) {
 # log file attribute
 #
 
+if($attr == "json") {
+  header('Content-type: application/json');
+  $fn = $root."/log/".$log.".json";
+  if(!file_exists($fn)) {
+    header("HTTP/1.1 404 No such log");
+    exit(0);
+  }
+  $json = file_get_contents($fn);
+  print "$json";
+  exit(0);
+}
+
 if($attr == "start") {
   $fn = $root."/log/".$log.".start";
   if(!file_exists($fn)) {

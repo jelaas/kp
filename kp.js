@@ -821,6 +821,7 @@ function Job(name) {
     this.admin = "0";
     this.params = [];
     this.files = [];
+    this.logdata = [];
     this.serial = 'no';
     this.options = {};
     this.pollcounter = 0;
@@ -1197,6 +1198,10 @@ function Job(name) {
 	    else
 		anim = '';
 	    
+	    if(!this.logdata[logname]) {
+		this.ajax(kp.baseurl + "_log/" + logname + "/json" , { job: this, logname: logname }, this.logdata_cb, this.logdata_ecb);
+	    }
+
 	    self.histelems[i] = Resource.div(self.histelem, function (div) {
 		Resource.tt(div, { class: anim }, logname);
 	    });
@@ -1212,15 +1217,29 @@ function Job(name) {
 		new Log(event.data);
 	    });
 
-	    self.histelems[i].on("mouseover mouseout", function(event) {
+	    self.histelems[i].on("mouseover mouseout", { log: logname, korv: "moj", data: self.logdata[logname] }, function(event) {
 		if (event.type == 'mouseover') {
 		    if($(this).data('mflag') != '1') {
 			$(this).data('bgcolor', $(this).css('background-color'));
 			$(this).data('mflag', '1');
 			$(this).css('background-color','white');
+			kp.popup.empty();
+			if(event.data) {
+			    $('<span>'+event.data.log+'</span>').appendTo(kp.popup);
+			    if(event.data.data) {
+				if(event.data.data.params) {
+				    for(var j=0;j<event.data.data.params.length;j++)
+					$('<div>'+event.data.data.params[j]+'</div>').appendTo(kp.popup);
+				    kp.popup.show();
+				}
+			    }
+			}
+			kp.popup.css('top', event.pageY+5);
+			kp.popup.css('left', event.pageX+5);
 		    }
 		}
 		if (event.type == 'mouseout') {
+		    kp.popup.hide();
 		    $(this).css('background-color', $(this).data('bgcolor'));
 		    $(this).data('mflag', '0');
 		}
@@ -1311,6 +1330,16 @@ function Job(name) {
     
     this.attr_ecb = function (text,status,xhr) {
 	if(this.cb) this.cb.call(this.job);
+    }
+
+    this.logdata_cb = function (text,status,xhr) {
+	var self = this.job;
+	try { self.logdata[this.logname] = JSON.parse(text); } catch(err) { alert(err+text); };
+    }
+
+    this.logdata_ecb = function (text,status,xhr) {
+	var self = this.job;
+	self.logdata[this.logname] = [ "unavailable" ];
     }
 
     this.history_cb = function (text,status,xhr) {
@@ -1606,6 +1635,11 @@ $(function () {
                 $("div.custom-menu").hide();
         }
     });
+    // Popup
+    kp.popup = $('<div id="popup" class="popup">POPUP</div>').appendTo('body');
+    kp.popup.hide();
+    kp.popup.css("position", "absolute");
+    kp.popup.css("background", "#eeeeee");
 
     kp.baseurl = $("#user").attr("baseurl") + "/";
     kp.username = $("#user").attr("username");
