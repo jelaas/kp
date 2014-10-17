@@ -538,7 +538,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
       	  $pjson = $pjson.$pp;
       }
       $pjson = $pjson." ]";
-      file_put_contents("$root/log/$d.json", "{ \"params\": $pjson, \"start\": $t, \"job\": \"$job\", \"pid\": $p, \"roles\": $r }");
+      $dd = json_encode($d);
+      file_put_contents("$root/log/$d.json", "{ \"log\": $dd, \"params\": $pjson, \"start\": $t, \"job\": \"$job\", \"pid\": $p, \"roles\": $r }");
 
       if($serial == "yes") {
 	kp_log( $root, "$job is serialized, checking lock: $root/tmp/RUN-$job");

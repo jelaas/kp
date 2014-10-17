@@ -1225,9 +1225,12 @@ function Job(name) {
 			$(this).css('background-color','white');
 			kp.popup.empty();
 			if(event.data) {
-			    $('<span>'+event.data.log+'</span>').appendTo(kp.popup);
 			    if(event.data.data) {
 				if(event.data.data.params) {
+				    if(event.data.data.job)
+					$('<div>Job: '+event.data.data.job+'</div>').appendTo(kp.popup);
+				    if(event.data.data.log)
+					$('<div>Log: '+event.data.data.log+'</div>').appendTo(kp.popup);
 				    for(var j=0;j<event.data.data.params.length;j++)
 					$('<div>'+event.data.data.params[j]+'</div>').appendTo(kp.popup);
 				    kp.popup.show();
