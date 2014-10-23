@@ -50,6 +50,7 @@ _i18n["Abort job"] = '<span lang="sv">Avbryt körning</span><span lang="en">Abor
 _i18n["Add parameter"] = '<span lang="sv">Ny parameter</span><span lang="en">Add parameter</span>';
 _i18n["Admin"] = '<span lang="sv">Administratör</span><span lang="en">Admin</span>';
 _i18n["Cancel"] = '<span lang="sv">Avbryt</span><span lang="en">Cancel</span>';
+_i18n["Click OK to login."] = '<span lang="sv">Klicka på OK för att logga in.</span><span lang="en">Click OK to login.</span>';
 _i18n["Description"] = '<span lang="sv">Beskrivning</span><span lang="en">Description</span>';
 _i18n["Do nothing"] = '<span lang="sv">Gör ingenting</span><span lang="en">Do nothing</span>';
 _i18n["file"] = '<span lang="sv">fil</span><span lang="en">file</span>';
@@ -63,6 +64,7 @@ _i18n["Serial"] = '<span lang="sv">Seriell</span><span lang="en">Serial</span>';
 _i18n["Tags"] = '<span lang="sv">Taggar</span><span lang="en">Tags</span>';
 _i18n["Upload"] = '<span lang="sv">Ladda upp</span><span lang="en">Upload</span>';
 _i18n["Yes"] = '<span lang="sv">Ja</span><span lang="en">Yes</span>';
+_i18n["You have been logged out."] = '<span lang="sv">Du har blivit utloggad.</span><span lang="en">You have been logged out.</span>';
 
 i18n.t = function (text) {
     if(_i18n[text]) return _i18n[text];
@@ -330,6 +332,7 @@ Resource.modal.alert = function () {
      */
     var elem;
     var oldpos;
+    var callback;
     $('#overlay').empty();
     elem = Resource.paragraph($('#overlay'));
     for(var i=0;i<arguments.length;i++) {
@@ -344,12 +347,18 @@ Resource.modal.alert = function () {
         if(typeof arguments[i] == "number") {
             oldpos = arguments[i];
         }
+	if(typeof arguments[i] == "function") {
+	    callback = arguments[i];
+	}
     }
     Resource.button.click($('#overlay'), "submit", "Ok", this, function(event){
-            $('#overlay').hide();
-            $('#fade').hide();
-            if(oldpos) window.scrollTo(0, oldpos);
-        });
+        $('#overlay').hide();
+        $('#fade').hide();
+	$('body').css({ overflow: 'inherit' });
+        if(oldpos) window.scrollTo(0, oldpos);
+	if(callback) callback();
+    });
+    $('body').css({ overflow: 'hidden' });
     $('#overlay').show();
     $('#fade').show();
 };
@@ -1345,6 +1354,13 @@ function Job(name) {
 	self.logdata[this.logname] = [ "unavailable" ];
     }
 
+    this.history_ecb = function (xhr,error) {
+	if(xhr.status == 403) {
+	    Resource.modal.alert("You have been logged out.", "Click OK to login.", function () {
+		location.reload(false);
+	    });
+	}
+    }
     this.history_cb = function (text,status,xhr) {
 	if(this.logs) {
 	    for(var i=0;i<this.logs.length;i++) {
@@ -1367,7 +1383,7 @@ function Job(name) {
 	this.ajax(kp.baseurl + "_exe/" + this.name + "/param" + param_no, { job: this, attr: param_no }, this.param_cb);
     };
     this.read_history = function () {
-	this.ajax(kp.baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb);
+	this.ajax(kp.baseurl + "_exe/" + this.name + "/logs" , this, this.history_cb, this.history_ecb);
     };
     this.read_files = function () {
 	this.ajax(kp.baseurl + "_file/" + this.name + "/list" , this, this.files_cb);
