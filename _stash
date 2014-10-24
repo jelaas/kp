@@ -66,7 +66,6 @@ if($op)
 $permitted=0;
 if(in_array($stash,$roles)) {
     $permitted=1;
-    break;
 }
 
 if($permitted == 0) {
