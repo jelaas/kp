@@ -22,6 +22,7 @@ Apache config
     AcceptPathInfo On
 #   SetEnv PATH /opt/php-5.3/bin:/bin:/usr/bin
 #   SetEnv KPSECRETS secretkey
+#   SetEnv KPSTASH othersecretkey
     SetEnv KPHOME /var/lib/kp
     SetEnv KPSESSIONTIMEOUT 480
     SetEnv KPCOOKIETIMEOUT 480
@@ -137,6 +138,25 @@ Configure the webserver to export the secret key:
 SetEnv KPSECRETS <SECRETKEY>
 
 Also note that this will not be completely secure unless you also use the sandbox functionality.
+
+The key for KPSECRETS and KPSTASH must not be the same.
+
+Per role secrets
+---------------
+
+If you need to have role-specific data that must be hidden from other jobs, you can
+create a directory $KPHOME/secrets/SECRETKEY.
+
+To stop other users from figuring out the secret directory:
+$ chmod o-r $KPHOME/secrets
+Note that the directory $KPHOME/secrets must not be owned or writable by the user running kp.
+
+Configure the webserver to export the secret key:
+SetEnv KPSTASH <SECRETKEY>
+
+Also note that this will not be completely secure unless you also use the sandbox functionality.
+
+The key for KPSECRETS and KPSTASH must not be the same.
 
 Sandbox
 -------

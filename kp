@@ -19,6 +19,7 @@ if(isset($_SERVER["QUERY_STRING"]))
 else
   $SERVICE=$KPCASSERVICE.$PI;
 $KPSECRETS=$_SERVER["KPSECRETS"];
+$KPSTASH=$_SERVER["KPSTASH"];
 
 if(strlen($PI)) {
   if (!filter_var($PI, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>",^[-=_./a-z0-9]+$,")))) {
@@ -48,6 +49,18 @@ if(!$KPSECRETS) {
   header("HTTP/1.1 500 Configuration error. KPSECRETS undefined.");
   header('Content-type: text/plain');
   print "Configuration error. KPSECRETS undefined.";
+  exit(0);
+}
+if(!$KPSTASH) {
+  header("HTTP/1.1 500 Configuration error. KPSTASH undefined.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPSTASH undefined.";
+  exit(0);
+}
+if($KPSTASH == $KPSECRETS) {
+  header("HTTP/1.1 500 Configuration error. KPSTASH same as KPSECRETS.");
+  header('Content-type: text/plain');
+  print "Configuration error. KPSTASH same as KPSECRETS.";
   exit(0);
 }
 if(!$CASURL) {
