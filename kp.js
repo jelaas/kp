@@ -59,12 +59,14 @@ _i18n["file"] = '<span lang="sv">fil</span><span lang="en">file</span>';
 _i18n["for"] = '<span lang="sv">för</span><span lang="en">for</span>';
 _i18n["Files"] = '<span lang="sv">Filer</span><span lang="en">Files</span>';
 _i18n["Files:"] = '<span lang="sv">Filer:</span><span lang="en">Files:</span>';
+_i18n["Import"] = '<span lang="sv">Importera</span><span lang="en">Import</span>';
 _i18n["No"] = '<span lang="sv">Nej</span><span lang="en">No</span>';
 _i18n["Run"] = '<span lang="sv">Kör</span><span lang="en">Run</span>';
 _i18n["Roles"] = '<span lang="sv">Roller</span><span lang="en">Roles</span>';
 _i18n["roles"] = '<span lang="sv">roller</span><span lang="en">roles</span>';
 _i18n["role"] = '<span lang="sv">roll</span><span lang="en">role</span>';
 _i18n["Save"] = '<span lang="sv">Spara</span><span lang="en">Save</span>';
+_i18n["Select"] = '<span lang="sv">Välj</span><span lang="en">Select</span>';
 _i18n["Serial"] = '<span lang="sv">Seriell</span><span lang="en">Serial</span>';
 _i18n["Stash"] = '<span lang="sv">Lager</span><span lang="en">Stash</span>';
 _i18n["Tags"] = '<span lang="sv">Taggar</span><span lang="en">Tags</span>';
@@ -384,6 +386,42 @@ Resource.modal.confirm = function (yes, no) {
             callback();
         });
     Resource.button.click($('#overlay'), "no", no, this, function(event){
+            $('#overlay').hide();
+            $('#fade').hide();
+            if(oldpos) window.scrollTo(0, oldpos);
+        });
+    $('#overlay').show();
+    $('#fade').show();
+};
+
+/* 
+ * select from list via modal overlay
+ * Resource.modal.confirm( [ 'a', 1, 2 ], "Free text", callback_for_selection)
+ */
+Resource.modal.select = function (list) {
+    var elem, oldpos = $(window).scrollTop();
+    var callback;
+    window.scrollTo(0, 0);
+    $('#overlay').empty();
+    elem = Resource.paragraph($('#overlay'));
+    callback = Resource._args_cb(elem, arguments, 1);
+
+    for(var i=0; i < list.length; i++ ) {
+	Resource.table.table($('#overlay'), function (tbl) {
+	    Resource.table.row(tbl, function (row) {
+		Resource.table.col(row, list[i], function (td) {
+		    td.click( i , function(event) {
+			$('#overlay').hide();
+			$('#fade').hide();
+			if(oldpos) window.scrollTo(0, oldpos);
+			callback(list[event.data]);
+		    });
+		});
+	    });
+	});
+    }
+    
+    Resource.button.click($('#overlay'), "Cancel", "Cancel" , this, function(event){
             $('#overlay').hide();
             $('#fade').hide();
             if(oldpos) window.scrollTo(0, oldpos);
@@ -1160,6 +1198,10 @@ function Job(name) {
 			formdata);
     }
 
+    this.importfile = function (role, name) {
+	this.ajax(kp.baseurl + "_file/" + this.name + "/import/"+role+"/"+name , this, this.read_files);
+    }
+
     this.files_display = function () {
 	var self=this;
 	var i;
@@ -1194,6 +1236,14 @@ function Job(name) {
 		var formData = new FormData();
 		formData.append('file', file);
 		event.data.sendfile(formData, file.name);
+	    });
+	    elem = Resource.div(self.fileselem);
+	    Resource.button.click(elem, "import", "Import", self, function(event) {
+		Resource.modal.select( kp.roles, "Select", " ", "role", function (role) {
+		    Resource.modal.select( kp.stash[role].files, "Select", " ", "file", function (sel) {
+			self.importfile.call(self, role, sel);
+		    });
+		});
 	    });
 	}
     }

@@ -8,6 +8,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 $root=$_SERVER["KPHOME"];
 $KPSECRETS=$_SERVER["KPSECRETS"];
+$KPSTASH=$_SERVER["KPSTASH"];
 
 $sesid = $_COOKIE['session'];
 if (!filter_var($sesid, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
@@ -111,6 +112,44 @@ if($op == "put") {
   if(move_uploaded_file($_FILES["file"]["tmp_name"], $root."/secrets/".$KPSECRETS."/".$job."/"."$fname") === FALSE) {
     header("HTTP/1.1 404 $name, failed to upload file $fname for job $job");
     kp_log($root, "$name, failed to upload file $fname for job $job");
+    exit(0);
+  }
+  kp_log($root, "user $name uploaded file $fname of size ".$_FILES["file"]["size"]);
+  exit(0);
+}
+
+if($op == "import") {
+  $frole=$a[3];
+  if (!filter_var($frole, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-z0-9]+$/")))) {
+    header("HTTP/1.1 403 Forbidden: role name syntax");
+    exit(0);
+  }
+
+  $fname=$a[4];
+  if (!filter_var($fname, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[-._a-zA-Z0-9]+$/")))) {
+    header("HTTP/1.1 403 Forbidden: invalid filename syntax");
+    exit(0);
+  }
+
+  if(!in_array($frole,$roles)) {
+    header("HTTP/1.1 403 Forbidden: unauthorized for role ").$frole;
+    exit(0);
+  }
+
+  // Create secret dir?
+  $dir = $root."/secrets/".$KPSECRETS."/".$job;
+  if($dh = opendir($dir)) {
+    closedir($dh);
+  } else {
+    if(mkdir($dir)===FALSE) {
+      header("HTTP/1.1 404 $name, failed to create secrets directory for files: $job");
+      kp_log($root, "$name, failed to create secrets directory for files: $job");
+      exit(0);
+    }
+  }
+  if(copy($root."/secrets/".$KPSTASH."/".$frole."/"."$fname", $root."/secrets/".$KPSECRETS."/".$job."/"."$fname") === FALSE) {
+    header("HTTP/1.1 404 $name, failed to copy file $fname for job $job");
+    kp_log($root, "$name, failed to copy file $fname from stash $frole to job $job");
     exit(0);
   }
   kp_log($root, "user $name uploaded file $fname of size ".$_FILES["file"]["size"]);
