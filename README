@@ -31,7 +31,7 @@ Apache config
     <Files "kp">
     	      SetHandler cgi-script
     </Files>
-    <Files ~ "^_(exe|auth|view|tags|log|logout|file)$">
+    <Files ~ "^_(exe|auth|view|tags|log|logout|file|stash)$">
     	      SetHandler cgi-script
     </Files>
 </Directory>
