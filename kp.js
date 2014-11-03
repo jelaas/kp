@@ -417,6 +417,7 @@ Resource.modal.select = function (list) {
 			callback(list[event.data]);
 		    });
 		});
+		row.on("mouseover mouseout", Resource.menu._highlight);
 	    });
 	});
     }
