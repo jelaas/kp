@@ -396,7 +396,7 @@ Resource.modal.confirm = function (yes, no) {
 
 /* 
  * select from list via modal overlay
- * Resource.modal.confirm( [ 'a', 1, 2 ], "Free text", callback_for_selection)
+ * Resource.modal.select( [ 'a', 1, 2 ], "Free text", callback_for_selection)
  */
 Resource.modal.select = function (list) {
     var elem, oldpos = $(window).scrollTop();
@@ -1241,7 +1241,10 @@ function Job(name) {
 	    Resource.button.click(elem, "import", "Import", self, function(event) {
 		Resource.modal.select( kp.roles, "Select", " ", "role", function (role) {
 		    Resource.modal.select( kp.stash[role].files, "Select", " ", "file", function (sel) {
-			self.importfile.call(self, role, sel);
+			Resource.modal.confirm("Import", "Do nothing", "Import", " ", "file", " ", sel,
+					       function() {
+						   self.importfile.call(self, role, sel);
+					       });
 		    });
 		});
 	    });
