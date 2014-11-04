@@ -339,8 +339,9 @@ Resource.modal.alert = function () {
      * alert via modal overlay
      */
     var elem;
-    var oldpos;
+    var oldpos = $(window).scrollTop();
     var callback;
+    window.scrollTo(0, 0);
     $('#overlay').empty();
     elem = Resource.paragraph($('#overlay'));
     for(var i=0;i<arguments.length;i++) {
