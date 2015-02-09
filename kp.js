@@ -1026,6 +1026,7 @@ function Job(name) {
 	}
     }
     this.param_add = function () {
+	var param;
 	param = new Param(this.paramelem, this.params.length+1, "Caption:");
 	if(this.edit) param.edit = 1;
 	this.params.push(param);
